@@ -1,0 +1,60 @@
+/* Lipwad design tokens. Source of truth for the frontend. See docs/DESIGN_PROMPT.md. */
+@import url('https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Brand navy */
+  --navy-950: #06122A;   /* sidebar, camera, evidence panels */
+  --navy-900: #0A1F44;   /* ink, primary buttons, hero */
+  --navy-800: #13294B;   /* active nav, chips on navy */
+  --navy-700: #23417A;
+  --navy-600: #2C4673;   /* inactive waveform on navy */
+  --navy-text-muted: #A9B8D6;  /* secondary text on navy */
+  --navy-text-soft: #C3CEE4;
+
+  /* Ground */
+  --paper: #F5F3EE;
+  --card: #FFFFFF;
+  --border: #E2DED4;
+  --border-strong: #CFC9BC;
+  --divider: #EEEAE1;
+
+  /* Ink */
+  --ink: #0A1F44;
+  --ink-body: #1E2C47;
+  --ink-muted: #4D5A73;
+
+  /* Signal (actions, focus, highlights; never status) */
+  --signal: #7FA6FF;
+  --signal-strong: #3D6FE0;
+  --signal-tint: rgba(127, 166, 255, 0.28);
+  --chip-neutral-bg: #EEF1F7;
+  --chip-neutral-fg: #23417A;
+
+  /* Status: always pair with an icon and a word */
+  --ready-fg: #0B6B4F;   --ready-bg: #DDF2E8;   --ready-solid: #12A27A;   --ready-on-navy: #6FE0B8;
+  --fix-fg: #8A4B00;     --fix-bg: #FFEFCC;     --fix-solid: #F2A516;     --fix-soft: #FFF7E3;
+  --blocked-fg: #A3201B; --blocked-bg: #FCE1DE; --blocked-solid: #E0483D;
+  --sha-fg: #1C4FA8;     --sha-bg: #E1EAFB;     --sha-solid: #3D7BE0;
+
+  /* Type */
+  --font-ui: 'Schibsted Grotesk', system-ui, sans-serif;
+  --font-mono: 'Martian Mono', ui-monospace, monospace;  /* money, IDs, timestamps, citations */
+  --text-display: 800 40px/1.1 var(--font-ui);  /* letter-spacing: -0.035em */
+  --text-h1: 800 34px/1.1 var(--font-ui);
+  --text-h2: 700 18px/1.3 var(--font-ui);
+  --text-body: 400 15px/1.5 var(--font-ui);
+  --text-small: 400 13px/1.45 var(--font-ui);
+  --text-chip: 500 11px/1.4 var(--font-mono);
+
+  /* Shape and space */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 18px;
+  --radius-pill: 999px;
+  --touch: 44px;
+  --sidebar-w: 248px;
+  --shadow-float: 0 8px 20px rgba(10, 31, 68, 0.35);
+  --shadow-sheet: 0 -10px 30px rgba(6, 18, 42, 0.25);
+  --focus-ring: 0 0 0 3px var(--signal);
+}

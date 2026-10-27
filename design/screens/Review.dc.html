@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lipwad — Claim review</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;600&amp;family=Schibsted+Grotesk:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F5F3EE}
+a{color:#1C3F80}a:hover{color:#0A1F44}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F3EE; color: #0A1F44; font-family: 'Schibsted Grotesk', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+
+<aside aria-label="Sidebar" style="flex: 1 1 248px; background: #06122A; color: #E6EBF5; padding: 22px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; color: #FFFFFF; text-decoration: none; padding: 4px 8px">
+<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#7FA6FF"/><path d="M11 8v15h11" fill="none" stroke="#06122A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 15.5l2.5 2.5 5-6" fill="none" stroke="#06122A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<span style="font-weight: 800; font-size: 22px; letter-spacing: -0.035em">lipwad</span>
+</a>
+<a href="MobileCapture.dc.html" style="display: flex; align-items: center; justify-content: center; gap: 8px; background: #7FA6FF; color: #06122A; font-weight: 700; text-decoration: none; min-height: 46px; border-radius: 12px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+New claim
+</a>
+<nav aria-label="Main" style="display: flex; flex-direction: column; gap: 2px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; color: #C3CEE4; text-decoration: none; font-weight: 500">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5.5 5h13L21 13v6H3v-6z"/></svg>
+<span style="flex-grow: 1">Today</span>
+<span style="font-family: 'Martian Mono', monospace; font-size: 11px; font-weight: 600; background: #E0483D; color: #FFFFFF; border-radius: 999px; padding: 2px 8px">3</span>
+</a>
+<a href="Review.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; background: #13294B; color: #FFFFFF; text-decoration: none; font-weight: 600">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7FA6FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h4"/></svg>
+Claims
+</a>
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; color: #C3CEE4; text-decoration: none; font-weight: 500">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 9.5v.01M17.5 14.5v.01"/></svg>
+Money
+</a>
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 10px; color: #C3CEE4; text-decoration: none; font-weight: 500">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5z"/><path d="M4 20.5A2.5 2.5 0 016.5 18H20v3H6.5"/></svg>
+SHA rules
+</a>
+</nav>
+<div style="margin-top: auto; background: #0D1E3D; border: 1px solid #1E3A66; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-weight: 600; color: #FFFFFF; font-size: 14px">Mwangaza Health Centre</span>
+<span style="font-size: 12px; color: #A9B8D6">Level 4 · demo data</span>
+</div>
+</aside>
+
+<main style="flex: 999 1 560px; min-width: 0; padding: 28px 40px 48px; box-sizing: border-box">
+<div style="max-width: 1140px; display: flex; flex-direction: column; gap: 22px">
+
+<nav aria-label="Breadcrumb" style="font-size: 14px; color: #4D5A73; display: flex; gap: 8px; align-items: center">
+<a href="Review.dc.html" style="text-decoration: none; font-weight: 500">Claims</a>
+<span aria-hidden="true">/</span>
+<span style="font-family: 'Martian Mono', monospace; font-size: 12px">CLM-0412</span>
+</nav>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<h1 style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1">Amina Wanjiru</h1>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #FFEFCC; color: #8A4B00"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17v.01"/></svg>Needs a fix</span>
+</div>
+<p style="margin: 0; color: #4D5A73">Inpatient · 3 nights · discharged 12 Oct 2026 · <span style="font-family: 'Martian Mono', monospace; color: #0A1F44">KSh 48,500</span> · <span style="color: #8A4B00; font-weight: 600">4 days left to submit</span></p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<a href="MobileCapture.dc.html" style="display: inline-flex; align-items: center; gap: 8px; background: #0A1F44; color: #FFFFFF; text-decoration: none; font-weight: 700; padding: 0 18px; border-radius: 12px; min-height: 48px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+Snap itemised invoice
+</a>
+<button type="button" disabled aria-disabled="true" style="font: inherit; font-weight: 700; padding: 0 18px; border-radius: 12px; min-height: 48px; background: #E9E5DC; color: #59647A; border: 1px solid #D6D0C3; cursor: not-allowed">OK &amp; submit</button>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E2DED4; border-radius: 14px; padding: 4px; display: flex; flex-wrap: wrap" aria-label="Claim checks">
+<span style="flex: 1 1 180px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6B4F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>Patient eligible</span>
+<span style="flex: 1 1 180px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6B4F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>Clinician in registry</span>
+<span style="flex: 1 1 180px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6B4F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>7 of 8 fields cited</span>
+<span style="flex: 1 1 180px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #8A4B00; background: #FFF7E3; border-radius: 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17v.01"/></svg>Itemised invoice missing</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start">
+
+<section aria-label="Evidence" style="flex: 999 1 540px; min-width: 0; background: #06122A; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 14px; color: #E6EBF5">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px">
+<span style="font-weight: 700; font-size: 15px; color: #FFFFFF">Evidence · {{sel.label}}</span>
+<span style="font-family: 'Martian Mono', monospace; font-size: 11px; color: #A9B8D6">{{sel.ref}}</span>
+</div>
+
+<sc-if value="{{sel.isImage}}" hint-placeholder-val="{{true}}">
+<div style="background: #0D1E3D; border-radius: 12px; padding: 30px 24px; display: flex; justify-content: center">
+<div style="position: relative; width: 100%; max-width: 420px; aspect-ratio: 3 / 4; background: #FBF9F3; border-radius: 3px; transform: rotate(-1.4deg); box-shadow: 0 18px 40px rgba(0,0,0,0.45); font-family: 'Martian Mono', monospace; color: #3A4256; overflow: hidden">
+<div style="position: absolute; top: 4%; left: 8%; right: 8%; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; border-bottom: 1px solid #CFCBBF; padding-bottom: 6px">DISCHARGE SUMMARY</div>
+<div style="position: absolute; top: 14%; left: 8%; font-size: 10px">Name: Amina Wanjiru</div>
+<div style="position: absolute; top: 14%; left: 60%; font-size: 10px">Age: 34 · F</div>
+<div style="position: absolute; top: 22%; left: 8%; font-size: 10px">Admitted: 09/10/2026</div>
+<div style="position: absolute; top: 22%; left: 52%; font-size: 10px">Discharged: 12/10/2026</div>
+<div style="position: absolute; top: 31%; left: 8%; right: 8%; font-size: 10px; line-height: 1.8">Diagnosis: Lobar pneumonia<br>Ward: General · Bed 4</div>
+<div style="position: absolute; top: 46%; left: 8%; right: 8%; display: flex; flex-direction: column; gap: 9px" aria-hidden="true">
+<div style="height: 5px; background: #E3E0D6; border-radius: 3px; width: 92%"></div>
+<div style="height: 5px; background: #E3E0D6; border-radius: 3px; width: 78%"></div>
+<div style="height: 5px; background: #E3E0D6; border-radius: 3px; width: 86%"></div>
+<div style="height: 5px; background: #E3E0D6; border-radius: 3px; width: 58%"></div>
+</div>
+<div style="position: absolute; top: 80%; left: 8%; font-size: 10px">Clinician: Dr. A. Otieno</div>
+<div style="position: absolute; top: 86%; left: 8%; font-size: 17px; font-style: italic; color: #2B3A68">A. Otieno</div>
+<div style="{{sel.boxStyle}}"><span style="position: absolute; top: -20px; left: -2px; font-family: 'Martian Mono', monospace; font-size: 9px; background: #7FA6FF; color: #06122A; padding: 2px 5px; border-radius: 3px; white-space: nowrap">SAM 3.1 · {{sel.conf}}</span></div>
+</div>
+</div>
+<div style="display: flex; gap: 8px" aria-label="Photos in this claim">
+<span style="flex: 1 1 0; text-align: center; font-size: 12px; padding: 8px; border-radius: 8px; background: #13294B; color: #FFFFFF; font-weight: 600">Discharge summary</span>
+<span style="flex: 1 1 0; text-align: center; font-size: 12px; padding: 8px; border-radius: 8px; background: #0D1E3D; color: #A9B8D6">Consent form</span>
+<span style="flex: 1 1 0; text-align: center; font-size: 12px; padding: 8px; border-radius: 8px; background: #0D1E3D; color: #A9B8D6">Lab slip</span>
+</div>
+</sc-if>
+
+<sc-if value="{{sel.isAudio}}" hint-placeholder-val="{{false}}">
+<div style="background: #0D1E3D; border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 14px">
+<button type="button" aria-label="Play this part" style="width: 48px; height: 48px; border-radius: 50%; border: none; background: #7FA6FF; color: #06122A; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
+<div style="display: flex; align-items: center; gap: 3px; height: 64px; flex-grow: 1" aria-hidden="true">
+<sc-for list="{{bars}}" as="b" hint-placeholder-count="44">
+<span style="{{b.style}}"></span>
+</sc-for>
+</div>
+<span style="font-family: 'Martian Mono', monospace; font-size: 12px; color: #A9B8D6">0:42</span>
+</div>
+<span style="font-size: 13px; color: #A9B8D6">Voice note · Wanjiku K. · {{sel.time}} · transcribed by Muse Voice Transcribe</span>
+<p style="margin: 0; font-size: 18px; line-height: 1.6; color: #FFFFFF">{{sel.quote}}</p>
+</div>
+</sc-if>
+
+<sc-if value="{{sel.isRule}}" hint-placeholder-val="{{false}}">
+<div style="background: #FBF9F3; color: #0A1F44; border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<span style="font-family: 'Martian Mono', monospace; font-size: 11px; background: #0A1F44; color: #FFFFFF; padding: 4px 8px; border-radius: 6px">{{sel.ruleId}}</span>
+<span style="font-family: 'Martian Mono', monospace; font-size: 11px; border: 1px solid #CFC9BC; padding: 4px 8px; border-radius: 6px">in force on 12 Oct 2026</span>
+<span style="font-family: 'Martian Mono', monospace; font-size: 11px; border: 1px solid #CFC9BC; padding: 4px 8px; border-radius: 6px">Level 4</span>
+</div>
+<p style="margin: 0; font-size: 17px; line-height: 1.6">{{sel.quote}}</p>
+<p style="margin: 0; font-size: 14px; color: #4D5A73">{{sel.note}}</p>
+</div>
+</sc-if>
+</section>
+
+<div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<section aria-label="Claim fields" style="background: #FFFFFF; border: 1px solid #E2DED4; border-radius: 16px; overflow: hidden">
+<div style="padding: 14px 18px; border-bottom: 1px solid #EEEAE1; display: flex; justify-content: space-between; align-items: baseline; gap: 10px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 700">What Lipwad found</h2>
+<span style="font-size: 12px; color: #4D5A73">Tap a field to see its proof</span>
+</div>
+<sc-for list="{{fields}}" as="fd" hint-placeholder-count="8">
+<button type="button" onClick="{{fd.pick}}" aria-pressed="{{fd.pressed}}" style="{{fd.rowStyle}}">
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0; flex-grow: 1; text-align: left">
+<span style="font-size: 12px; color: #4D5A73">{{fd.label}}</span>
+<span style="{{fd.valueStyle}}">{{fd.value}}</span>
+</span>
+<span style="{{fd.chipStyle}}">{{fd.chip}}</span>
+</button>
+</sc-for>
+</section>
+
+<section aria-label="Ask about this claim" style="background: #FFFFFF; border: 1px solid #E2DED4; border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 700">Ask about this claim</h2>
+<div style="background: #F5F3EE; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 600">Why does this need an itemised invoice?</span>
+<span style="font-size: 14px; color: #1E2C47">Inpatient claims must list each service, quantity and amount. Your photos have the total only, so SHA would return it.</span>
+<span style="align-self: flex-start; font-family: 'Martian Mono', monospace; font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #EEF1F7; color: #23417A">SHA-CIR-01 · v[YYYY-MM]</span>
+</div>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #4D5A73">
+Your question
+<input type="text" placeholder="e.g. Which documents does SHA still need?" style="font: inherit; font-size: 15px; min-height: 46px; padding: 0 14px; border-radius: 10px; border: 1px solid #CFC9BC; color: #0A1F44; background: #FFFFFF">
+</label>
+<span style="font-size: 12px; color: #4D5A73">Answers only from this claim’s evidence and SHA rules, always cited. No clinical advice.</span>
+</section>
+</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 'invoice' };
+  }
+  renderVals() {
+    var defs = [
+      { id: 'name', label: 'Patient name', value: 'Amina Wanjiru', kind: 'image', chip: 'Photo 1', ref: 'IMG-0412-1 · region 1', box: [12.5, 6, 42, 6], conf: '0.98' },
+      { id: 'admit', label: 'Admitted', value: '09 Oct 2026', kind: 'image', chip: 'Photo 1', ref: 'IMG-0412-1 · region 2', box: [20.5, 6, 38, 6], conf: '0.97' },
+      { id: 'discharge', label: 'Discharged', value: '12 Oct 2026', kind: 'image', chip: 'Photo 1', ref: 'IMG-0412-1 · region 3', box: [20.5, 50, 42, 6], conf: '0.97' },
+      { id: 'dx', label: 'Diagnosis, coded', value: 'Lobar pneumonia · [HIE code]', kind: 'image', chip: 'Photo 1', ref: 'IMG-0412-1 · region 4', box: [29.5, 6, 66, 6], conf: '0.95' },
+      { id: 'stay', label: 'Length of stay', value: '3 nights, general ward', kind: 'audio', chip: 'Voice 0:12', ref: 'AUD-0412-1 · 0:12–0:19', time: '0:12–0:19', quote: '“Alilazwa siku tatu, general ward, bed four, akatoka tarehe kumi na mbili.”', from: 11, to: 17 },
+      { id: 'clin', label: 'Treating clinician', value: 'Dr. A. Otieno · in registry', kind: 'image', chip: 'Photo 1', ref: 'IMG-0412-1 · region 5', box: [78.5, 6, 76, 15], conf: '0.93' },
+      { id: 'pkg', label: 'Benefit package', value: 'Inpatient, general · Level 4', kind: 'rule', chip: 'Rule', ref: 'SHA-BEN-01 · v[YYYY-MM]', ruleId: 'SHA-BEN-01 · v[YYYY-MM]', quote: '[Clause text quoted exactly as stored in the rules corpus, with its version and effective dates.]', note: 'Matched on facility level, service type and date of service.' },
+      { id: 'invoice', label: 'Itemised invoice', value: 'Missing', kind: 'rule', chip: 'Needed', ref: 'SHA-CIR-01 · v[YYYY-MM]', ruleId: 'SHA-CIR-01 · v[YYYY-MM]', quote: '[Required document for this claim type: an itemised invoice listing each service, quantity and amount.]', note: 'Not found in the 3 photos or the voice note. Snap the itemised invoice to clear this.', missing: true }
+    ];
+    var self = this;
+    var sel = this.state.sel;
+    var fields = defs.map(function (d) {
+      var on = d.id === sel;
+      return {
+        label: d.label, value: d.value, chip: d.chip,
+        pressed: on ? 'true' : 'false',
+        pick: function () { self.setState({ sel: d.id }); },
+        rowStyle: 'font: inherit; color: inherit; display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 18px; min-height: 56px; border: none; border-bottom: 1px solid #EEEAE1; cursor: pointer; background: ' + (on ? '#EEF1F7' : '#FFFFFF') + ';' + (on ? ' outline: 2px solid #7FA6FF; outline-offset: -2px;' : ''),
+        valueStyle: d.missing ? 'font-size: 15px; font-weight: 700; color: #8A4B00' : 'font-size: 15px; font-weight: 600; color: #0A1F44',
+        chipStyle: 'flex-shrink: 0; font-family: \'Martian Mono\', monospace; font-size: 11px; padding: 4px 8px; border-radius: 6px; ' + (d.missing ? 'background: #FFEFCC; color: #8A4B00' : (d.kind === 'audio' ? 'background: #E1EAFB; color: #1C4FA8' : 'background: #EEF1F7; color: #23417A'))
+      };
+    });
+    var s = defs.filter(function (d) { return d.id === sel; })[0];
+    var boxStyle = s.box ? 'position: absolute; top: ' + s.box[0] + '%; left: ' + s.box[1] + '%; width: ' + (s.box[2] - s.box[1] + 4) + '%; height: ' + s.box[3] + '%; border: 2px solid #3D6FE0; background: rgba(127,166,255,0.28); border-radius: 4px' : 'display: none';
+    var heights = [30, 52, 40, 68, 44, 24, 58, 80, 36, 62, 74, 50, 66, 42, 28, 54, 70, 46, 32, 60, 76, 40, 26, 56, 64, 38, 48, 72, 34, 58, 44, 30, 52, 66, 40, 28, 50, 36, 24, 42, 30, 46, 22, 34];
+    var bars = heights.map(function (h, i) {
+      var hot = s.from !== undefined && i >= s.from && i <= s.to;
+      return { style: 'display: block; flex: 1 1 0; min-width: 2px; border-radius: 2px; height: ' + h + '%; background: ' + (hot ? '#7FA6FF' : '#2C4673') };
+    });
+    return {
+      fields: fields, bars: bars,
+      sel: {
+        label: s.label, ref: s.ref, quote: s.quote || '', note: s.note || '', ruleId: s.ruleId || '', time: s.time || '', conf: s.conf || '',
+        isImage: s.kind === 'image', isAudio: s.kind === 'audio', isRule: s.kind === 'rule',
+        boxStyle: boxStyle
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
