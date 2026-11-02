@@ -1,0 +1,32 @@
+[project]
+name = "lipwad-backend"
+version = "0.1.0"
+description = "Multimodal agent that turns paper records and voice notes into cited SHA claims"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "pydantic>=2.9",
+    "sqlalchemy>=2.0",
+    "uvicorn>=0.32",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27",
+    "pytest>=8.3",
+    "ruff>=0.7",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
