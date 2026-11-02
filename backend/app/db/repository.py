@@ -1,28 +1,69 @@
 """Converts claims between domain schemas and database rows."""
 
-from sqlalchemy.orm import Session
+from datetime import UTC
 
-from app.db.schemas import Citation, Claim, Field, Flag, Lifecycle
-from app.db.tables import CitationRow, ClaimRow, FieldRow, FlagRow
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
+
+from app.db.schemas import Citation, Claim, Field, Flag, Lifecycle, Readiness, Upload
+from app.db.tables import CitationRow, ClaimRow, FieldRow, FlagRow, UploadRow
 
 
-def save_claim(session: Session, claim: Claim) -> None:
-    existing = session.get(ClaimRow, claim.id)
-    if existing:
-        session.delete(existing)
-        session.flush()
-    session.add(_claim_row(claim))
+class StaleClaimError(Exception):
+    """The claim changed in the database after this copy was loaded."""
+
+
+def save_claim(session: Session, claim: Claim) -> Claim:
+    """Store a claim, refusing a copy that is older than the stored one."""
+    row = session.get(ClaimRow, claim.id)
+    if row is None:
+        row = ClaimRow(id=claim.id, version=0)
+        session.add(row)
+    elif row.version != claim.version:
+        raise StaleClaimError(f"{claim.id}: stored v{row.version}, saving v{claim.version}")
+
+    row.version = claim.version + 1
+    row.lifecycle = claim.lifecycle.value
+    row.readiness = claim.readiness.value if claim.readiness else None
+    row.hie_id = claim.hie_id
+    row.discharge_date = claim.discharge_date
+    row.returned_at = claim.returned_at.astimezone(UTC) if claim.returned_at else None
+    row.fields = [
+        *(_field_row(item, position, False) for position, item in enumerate(claim.fields)),
+        *(_field_row(item, position, True) for position, item in enumerate(claim.coded_lines)),
+    ]
+    row.flags = [
+        FlagRow(
+            position=position,
+            code=item.code,
+            severity=item.severity,
+            citations=_citation_rows(item.citations),
+        )
+        for position, item in enumerate(claim.flags)
+    ]
+    session.flush()
+    return claim.model_copy(update={"version": row.version})
 
 
 def load_claim(session: Session, claim_id: str) -> Claim | None:
-    row = session.get(ClaimRow, claim_id)
+    row = session.get(
+        ClaimRow,
+        claim_id,
+        options=[
+            selectinload(ClaimRow.fields).selectinload(FieldRow.citations),
+            selectinload(ClaimRow.flags).selectinload(FlagRow.citations),
+        ],
+    )
     if row is None:
         return None
     return Claim(
         id=row.id,
+        version=row.version,
         lifecycle=Lifecycle(row.lifecycle),
+        readiness=Readiness(row.readiness) if row.readiness else None,
+        hie_id=row.hie_id,
         discharge_date=row.discharge_date,
-        returned_at=row.returned_at,
+        returned_at=row.returned_at.replace(tzinfo=UTC) if row.returned_at else None,
         fields=[_field(item) for item in row.fields if not item.is_coded_line],
         coded_lines=[_field(item) for item in row.fields if item.is_coded_line],
         flags=[
@@ -32,25 +73,19 @@ def load_claim(session: Session, claim_id: str) -> Claim | None:
     )
 
 
-def _claim_row(claim: Claim) -> ClaimRow:
-    fields = [_field_row(item, position, False) for position, item in enumerate(claim.fields)]
-    lines = [_field_row(item, position, True) for position, item in enumerate(claim.coded_lines)]
-    return ClaimRow(
-        id=claim.id,
-        lifecycle=claim.lifecycle.value,
-        discharge_date=claim.discharge_date,
-        returned_at=claim.returned_at,
-        fields=fields + lines,
-        flags=[
-            FlagRow(
-                position=position,
-                code=item.code,
-                severity=item.severity,
-                citations=_citation_rows(item.citations),
-            )
-            for position, item in enumerate(claim.flags)
-        ],
-    )
+def save_upload(session: Session, upload: Upload) -> None:
+    session.add(UploadRow(**upload.model_dump()))
+    session.flush()
+
+
+def list_uploads(session: Session, claim_id: str) -> list[Upload]:
+    rows = session.scalars(select(UploadRow).where(UploadRow.claim_id == claim_id))
+    return [
+        Upload(
+            id=row.id, claim_id=row.claim_id, kind=row.kind, filename=row.filename, path=row.path
+        )
+        for row in rows
+    ]
 
 
 def _field_row(field: Field, position: int, is_coded_line: bool) -> FieldRow:
