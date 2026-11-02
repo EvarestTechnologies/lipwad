@@ -1,0 +1,22 @@
+{
+  "case_id": "C03",
+  "facility_level": 4,
+  "facility_id": "FAC-L4",
+  "patient_ref": "PT-003",
+  "practitioner_id": "PR-100",
+  "service_type": "maternity",
+  "date_of_service": "2026-10-12",
+  "expected_status": "green",
+  "expected_reasons": [],
+  "fields": {
+    "patient_name": "Synthetic Patient 03 [demo]",
+    "admission_date": "2026-10-12",
+    "discharge_date": "2026-10-14"
+  },
+  "codes": [
+    "PLACEHOLDER-001"
+  ],
+  "mock_hie_outcome": "accept",
+  "mock_hie_reasons": [],
+  "days_since_outcome": null
+}
