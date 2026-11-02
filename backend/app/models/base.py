@@ -35,31 +35,45 @@ class ProviderConfig(BaseModel):
 
 
 class ChatMessage(BaseModel):
+    """One turn in a Chat Completions conversation."""
+
     role: Literal["system", "user", "assistant"]
     content: str
 
 
 class ChatRequest(BaseModel):
+    """Messages to complete, plus the stub replay key."""
+
     messages: list[ChatMessage] = PydanticField(min_length=1)
     case_id: str | None = None  # stub replay key; also used for tracing
 
 
 class ChatResponse(BaseModel):
+    """Text completion with its provenance."""
+
     content: str
     model_id: str
     provider: str
 
 
 class EmbeddingResponse(BaseModel):
+    """Embedding vector with its provenance."""
+
     vector: list[float]
     model_id: str
     provider: str
 
 
 class ModelClient(Protocol):
-    def complete(self, request: ChatRequest) -> ChatResponse: ...
+    """What every model client implements."""
 
-    def embed(self, text: str) -> EmbeddingResponse: ...
+    def complete(self, request: ChatRequest) -> ChatResponse:
+        """Complete a chat request."""
+        ...
+
+    def embed(self, text: str) -> EmbeddingResponse:
+        """Embed a text for retrieval."""
+        ...
 
 
 class StubFixtureMissingError(KeyError):

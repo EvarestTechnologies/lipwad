@@ -16,6 +16,8 @@ from app.models.base import (
 
 
 class OpenAICompatibleClient:
+    """POST Chat Completions and embeddings to any configured provider."""
+
     def __init__(
         self,
         config: ProviderConfig,
@@ -31,6 +33,7 @@ class OpenAICompatibleClient:
         return self._config
 
     def complete(self, request: ChatRequest) -> ChatResponse:
+        """POST the messages and return the assistant content."""
         payload = {
             "model": self._config.model_id,
             "messages": [item.model_dump() for item in request.messages],
@@ -47,6 +50,7 @@ class OpenAICompatibleClient:
         )
 
     def embed(self, text: str) -> EmbeddingResponse:
+        """POST the text and return its embedding vector."""
         data = self._post("embeddings", {"model": self._config.model_id, "input": text})
         try:
             vector = data["data"][0]["embedding"]

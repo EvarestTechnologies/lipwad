@@ -27,6 +27,7 @@ class StubProvider:
         return self._role
 
     def complete(self, request: ChatRequest) -> ChatResponse:
+        """Replay the fixture for the request's case ID."""
         if not request.case_id:
             raise StubFixtureMissingError("stub replay needs a case_id")
         keys = (f"{self._role.value}:{request.case_id}", request.case_id)
@@ -38,6 +39,7 @@ class StubProvider:
         )
 
     def embed(self, text: str) -> EmbeddingResponse:
+        """Derive a deterministic pseudo-embedding from the text."""
         digest = hashlib.sha256(text.encode("utf-8")).digest()
         vector = [(byte - 128) / 128 for byte in digest[:STUB_EMBEDDING_DIM]]
         return EmbeddingResponse(vector=vector, model_id="stub", provider="stub")

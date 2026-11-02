@@ -1,7 +1,7 @@
 """Build the model client for a role.
 
-`MODEL_PROVIDER_MODE=stub` (as in CI) serves fixtures without network;
-anything else resolves the live provider and requires its key.
+`MODEL_PROVIDER_MODE=stub` (as in CI) serves fixtures without network; `live`
+(the default) resolves the provider and requires its key; anything else raises.
 """
 
 import os
@@ -22,6 +22,7 @@ def create_client(
     fixtures: Mapping[str, str] | None = None,
     transport: httpx.BaseTransport | None = None,
 ) -> ModelClient:
+    """Build the stub or live client for a role."""
     settings = dict(os.environ) if env is None else dict(env)
     mode = (settings.get("MODEL_PROVIDER_MODE") or "live").strip().lower()
     if mode == "stub":
