@@ -9,6 +9,7 @@ Lipwad gets Kenyan hospitals paid. It is a multimodal agent that turns photos of
 - `docs/DATA.md`: synthetic cases C01–C03, F01–F09 (the test suite and the demo script)
 - `docs/SOURCES.md`: rules corpus registry (every rule cited by ID and version)
 - `docs/DEPLOY.md`: CI/CD pipeline and terminal deployment
+- `docs/DECISIONS.md`: choices that resolve gaps in the spec
 - `docs/DESIGN_PROMPT.md` and `design/`: UI system, screens and `tokens.css`
 
 ## Stack
@@ -42,7 +43,7 @@ These come from the participant guide and decide whether Lipwad is judged at all
 6. **Show the Meta tooling.** Meta tooling is 25% of the score. Surface what is distinctive: SAM 3.1 masks as the click-to-source highlight, audio-timestamp citations from Muse Voice Transcribe, and Muse Spark Open's reasoning trace in the activity feed.
 7. **Muse Code is part of the toolchain.** Slices built with Muse Code say so in their commit messages, and CI runs a headless `muse exec` check. Only claim Muse Code for work it actually did.
 8. **Priorities follow the rubric.** Impact 30%, Meta tooling 25%, demo 25%, technical depth 20%. Demo-critical cases (C01–C03, F01–F05) come before polish; stretch items wait until every PRD acceptance criterion passes.
-9. **A live product and a 3-minute video are deliverables.** The live URL is deployed from day 2 and kept up through Nov 16 (community vote). The video has its own script and recording slot. Feature freeze is Nov 3; submission is Nov 4, 9 PM ET.
+9. **A live product and a 3-minute video are deliverables.** The live URL is kept up through Nov 16 (community vote). The video has its own script and recording slot. Feature freeze is midday ET on Nov 4; submission is Nov 4, 9 PM ET.
 10. **Credit hygiene.** Spend limits are set on every provider. Never loop paid model calls in tests or CI.
 
 ## Build order

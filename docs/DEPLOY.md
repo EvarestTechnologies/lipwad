@@ -36,7 +36,7 @@ Runs on every push and pull request:
 1. `uv sync`, then `ruff check`, `ruff format --check` and `pytest` with `HIE_MODE=mock` and stub model providers. CI never calls a paid model.
 2. `npm ci`, then `tsc --noEmit` and `vite build` for the frontend.
 3. A secret scan that fails if anything resembling a key appears in the diff.
-4. Muse Code review: `muse exec` runs headlessly with a review-only prompt against the PR diff (no file writes, no `--yolo`) and posts its findings as a job summary. It is skipped when `MODEL_API_KEY` is not set as a repo secret.
+4. Muse Code review: `muse exec` runs headlessly with a review-only prompt against the PR diff (no file writes, no `--yolo`) and posts its findings as a job summary. It authenticates with `META_API_KEY` and is skipped when that repo secret is not set.
 
 ## CD (`.github/workflows/deploy.yml`)
 Runs on push to `main` once CI passes, and can also be started by hand with `workflow_dispatch`:
@@ -56,9 +56,10 @@ The provider keys stay in the Modal secret. GitHub only holds the Modal token an
 ## Dates
 | Date | Milestone |
 |---|---|
-| Oct 28 | CI green; walking skeleton live on Modal |
+| Nov 2 | CI green; walking skeleton live on Modal |
 | Daily | Every merge to `main` auto-deploys; smoke test passes |
-| Nov 3 | Feature freeze; last full day of hackathon troubleshooting support |
+| Nov 3 | Last full day of hackathon troubleshooting support |
+| Nov 4, midday ET | Feature freeze |
 | Nov 4, 9 PM ET | Submission: public repo, live URL, 3-minute video |
 | Nov 5 – Nov 16 | Keep warm (`min_containers=1`) through judging, finals (Nov 9) and the community vote |
 
