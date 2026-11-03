@@ -16,3 +16,6 @@ Choices that resolve gaps or conflicts in the spec. Change one here before chang
 | Tooling | `uv` for Python, `npm` for the frontend, Vitest for frontend tests. | One tool per job. |
 | Git | Feature branches, reviewed PRs, merge commits, no squash. | Commit history is the originality evidence. |
 | Scope | C01 and F01–F05 first, then F06 and F07. Today, Claim review and one rescue come before Capture and Money. | Prioritises the demo in the remaining build window. |
+| Voice notes | Muse Voice Transcribe is called through the Meta Model API's realtime WebSocket (`wss://api.meta.ai/v1/asr/realtime`), streaming 80 ms PCM16 frames at real-time pace. Segments are timed from the server's `audioProcessedMs`. | The API offers no file-transcription endpoint. Streaming a 20-second note takes about 20 seconds. |
+| Voice languages | Voice notes are transcribed with an English language bias. Kiswahili and Sheng notes are not supported yet. | Kiswahili is not in Muse Voice Transcribe's published language list. |
+| Spoken dates | The listen tool reads a calendar date from the transcript with a deterministic parser, and cites the segment it came from. | A wrong date would raise a false flag; parsing what was actually said is verifiable. |

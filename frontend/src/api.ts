@@ -91,6 +91,10 @@ export function display(name: string, value: string): string {
   return v;
 }
 
+/** Seconds as m:ss, for audio citations. */
+export const clock = (seconds: number) =>
+  `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+
 /** Splits a logged explanation into its English and Kiswahili parts. */
 export function explanation(text: string): { en: string; sw: string | null } {
   const [en, sw] = text.split(" | SW: ");

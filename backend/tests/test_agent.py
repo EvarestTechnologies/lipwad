@@ -12,11 +12,12 @@ from app.db.seed import load_cases, mock_script, register_submissions, seed_clai
 from app.db.tables import Base
 from app.hie.mock import MockHIE
 from app.models import ChatResponse, Role, StubProvider
+from app.models.transcribe import FixtureTranscriber
 from app.tools.fixtures import load_fixtures
 
 DATA_DIR = Path(__file__).parents[2] / "data" / "synthetic"
 CASES = {case.case_id: case for case in load_cases(DATA_DIR)}
-GATE = ["C01", "C02", "C03", "F01", "F02", "F03", "F04", "F05", "F07", "F08", "F09"]
+GATE = ["C01", "C02", "C03", "F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09"]
 
 
 class FakeReasoning:
@@ -41,7 +42,10 @@ def run(case_id: str):
     register_submissions(hie, list(CASES.values()))
     reasoning = FakeReasoning()
     agent = ClaimAgent(
-        vision=StubProvider(Role.VISION, load_fixtures(DATA_DIR)), reasoning=reasoning, hie=hie
+        vision=StubProvider(Role.VISION, load_fixtures(DATA_DIR)),
+        reasoning=reasoning,
+        hie=hie,
+        transcriber=FixtureTranscriber(load_fixtures(DATA_DIR)),
     )
     with Session(engine) as session:
         seed_claims(session, list(CASES.values()))
@@ -163,3 +167,38 @@ def test_explanation_is_logged_english_first_then_kiswahili() -> None:
 
     assert step.text == "Explanation [demo] | SW: Maelezo [demo]"
     assert "hospital claims clerk" in prompt and "approve" in prompt
+
+
+def test_voice_note_is_heard_and_logged_with_its_model() -> None:
+    claim, activity, _ = run("F06")
+    spoken = next(f for f in claim.fields if f.name == "voice_admission_date")
+
+    assert spoken.citations[0].kind == "audio"
+    assert any("voice note" in step.text.lower() and step.model for step in activity)
+
+
+class Broken:
+    def transcribe(self, audio_path: str, case_id: str):
+        from app.models import ModelAPIError
+
+        raise ModelAPIError("unreadable audio")
+
+
+def test_unreadable_voice_note_blocks_green_with_a_re_record_request() -> None:
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    hie = MockHIE(script=mock_script(list(CASES.values())))
+    agent = ClaimAgent(
+        vision=StubProvider(Role.VISION, load_fixtures(DATA_DIR)),
+        reasoning=FakeReasoning(),
+        hie=hie,
+        transcriber=Broken(),
+    )
+    with Session(engine) as session:
+        seed_claims(session, list(CASES.values()))
+        agent.run(session, "F06", case_uploads(DATA_DIR, "F06"))
+        claim = load_claim(session, "F06")
+
+    codes = {flag.code for flag in claim.flags}
+    assert "voice_note_unclear" in codes and "retake_required" not in codes
+    assert claim.readiness == Readiness.AMBER

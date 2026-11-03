@@ -30,3 +30,39 @@ def test_bed_days_on_an_outpatient_visit_are_flagged() -> None:
     assert "service_type_inconsistent" in codes(
         visit_type="Outpatient", invoice_line_1="Bed days x2: KSh 6000"
     )
+
+
+def test_voice_and_form_dates_that_disagree_are_flagged_with_both_sources() -> None:
+    spoken = Field(
+        name="voice_admission_date",
+        value="2026-10-11",
+        confidence=1,
+        citations=[Citation(kind="audio", source_id="note", t_start=5.6, t_end=10.3)],
+    )
+    fields = {
+        "admission_date": field("admission_date", "2026-10-12"),
+        "voice_admission_date": spoken,
+    }
+    flags = check(Claim(id="X"), Evidence(fields, [], True, 3), datetime(2026, 11, 3, tzinfo=UTC))
+    flag = next(flag for flag in flags if flag.code == "admission_date_mismatch")
+
+    assert flag.severity == "amber"
+    assert {c.kind for c in flag.citations} == {"image", "audio", "rule"}
+
+
+def test_matching_voice_and_form_dates_are_not_flagged() -> None:
+    assert "admission_date_mismatch" not in codes(
+        admission_date="2026-10-12", voice_admission_date="2026-10-12"
+    )
+
+
+def test_an_unclear_voice_note_asks_for_a_new_recording_not_a_photo() -> None:
+    from app.agent.rules import Evidence as Ev
+
+    note = Citation(kind="audio", source_id="F06-voice_note", t_start=0, t_end=22.2)
+    flags = check(
+        Claim(id="X"), Ev({}, [], True, 3, voice_retake=note), datetime(2026, 11, 3, tzinfo=UTC)
+    )
+
+    assert [f.code for f in flags] == ["voice_note_unclear"]
+    assert flags[0].citations == [note]

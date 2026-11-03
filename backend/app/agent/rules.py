@@ -24,6 +24,7 @@ RULES = {
     "SHA-PRACTITIONER-REGISTRY": "Flags a practitioner number the registry lookup does not find.",
     "SHA-FACILITY-LEVEL": f"Flags inpatient care at a facility below level {MIN_INPATIENT_LEVEL}.",
     "SHA-RESUBMISSION": "Flags a returned or rejected claim and its resubmission countdown.",
+    "SHA-DATES-CONSISTENT": "Flags a voice note admission date that differs from the form.",
     "TERM-PLACEHOLDER": "Marks a service code as a placeholder until terminology is registered.",
 }
 
@@ -40,6 +41,7 @@ class Evidence:
     retake_reasons: list[str]
     practitioner_found: bool | None
     facility_level: int | None
+    voice_retake: Citation | None = None
 
 
 def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
@@ -52,6 +54,10 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
         page = Citation(kind="image", source_id=claim.id + "-claim_form", region=[[0, 0], [1, 1]])
         retake = cite("patient_ref", "admission_date") or [page]
         flags.append(Flag(code="retake_required", severity="amber", citations=retake))
+    if evidence.voice_retake:
+        flags.append(
+            Flag(code="voice_note_unclear", severity="amber", citations=[evidence.voice_retake])
+        )
     if fields.get("clinician_signature") and fields["clinician_signature"].value == "absent":
         flags.append(
             Flag(
@@ -66,6 +72,18 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
                 code="itemised_invoice_missing",
                 severity="amber",
                 citations=[*cite("invoice_itemised"), rule("SHA-DOC-INVOICE")],
+            )
+        )
+    spoken, written = fields.get("voice_admission_date"), fields.get("admission_date")
+    if spoken and written and spoken.value != written.value:
+        flags.append(
+            Flag(
+                code="admission_date_mismatch",
+                severity="amber",
+                citations=[
+                    *cite("admission_date", "voice_admission_date"),
+                    rule("SHA-DATES-CONSISTENT"),
+                ],
             )
         )
     bed_lines = [

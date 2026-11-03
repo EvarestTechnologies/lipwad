@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.agent.rules import Evidence, check, rule
 from app.db.repository import add_activity, list_uploads, load_claim, save_claim, save_upload
-from app.db.schemas import ActivityStep, Field, Lifecycle, Readiness, Upload
+from app.db.schemas import ActivityStep, Citation, Field, Lifecycle, Readiness, Upload
 from app.hie.base import ClaimPatch, Confirmation, HieAdapter
 from app.models import (
     ChatMessage,
@@ -23,9 +23,12 @@ from app.models import (
     ModelClient,
     StubFixtureMissingError,
 )
+from app.models.transcribe import Transcriber, audio_seconds
 from app.tools.intake import DocumentInput, extract_document
+from app.tools.listen import NoteInput, transcribe_note
 
 DOCUMENTS = ("claim_form", "invoice")
+VOICE_NOTE = "voice_note.wav"
 
 EXPLAIN_PROMPT = (
     "You write for a hospital claims clerk in Kenya who prepares claims for SHA. Given "
@@ -39,7 +42,7 @@ EXPLAIN_PROMPT = (
 
 
 def case_uploads(data_dir: Path, case_id: str) -> list[Upload]:
-    return [
+    uploads = [
         Upload(
             id=f"{case_id}-{kind}",
             claim_id=case_id,
@@ -50,6 +53,17 @@ def case_uploads(data_dir: Path, case_id: str) -> list[Upload]:
         for kind in DOCUMENTS
         if (data_dir / case_id / f"{kind}.png").exists()
     ]
+    if (data_dir / case_id / VOICE_NOTE).exists():
+        uploads.append(
+            Upload(
+                id=f"{case_id}-voice_note",
+                claim_id=case_id,
+                kind="audio",
+                filename=VOICE_NOTE,
+                path=str(data_dir / case_id / VOICE_NOTE),
+            )
+        )
+    return uploads
 
 
 class ClaimAgent:
@@ -58,8 +72,10 @@ class ClaimAgent:
         vision: ModelClient,
         reasoning: ModelClient,
         hie: HieAdapter,
+        transcriber: Transcriber | None = None,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
     ) -> None:
+        self._transcriber = transcriber
         self._vision = vision
         self._reasoning = reasoning
         self._hie = hie
@@ -76,9 +92,13 @@ class ClaimAgent:
         known = {upload.id for upload in list_uploads(session, case_id)}
         fields: dict[str, Field] = {}
         retake: list[str] = []
+        voice_retake: Citation | None = None
         for upload in uploads:
             if upload.id not in known:
                 save_upload(session, upload)
+            if upload.kind == "audio":
+                voice_retake = self._listen(session, case_id, upload, fields)
+                continue
             kind = upload.filename.removesuffix(".png")
             result = extract_document(
                 DocumentInput(upload=upload, case_id=case_id, kind=kind), self._vision
@@ -114,7 +134,7 @@ class ClaimAgent:
                 practitioner.citations,
             )
 
-        flags = check(claim, Evidence(fields, retake, found, level), self._clock())
+        flags = check(claim, Evidence(fields, retake, found, level, voice_retake), self._clock())
         coded = []
         if "diagnosis" in fields:
             coded.append(
@@ -141,6 +161,36 @@ class ClaimAgent:
             [c for flag in flags for c in flag.citations],
         )
         self._explain(session, claim)
+
+    def _listen(self, session, case_id, upload, fields) -> Citation | None:
+        """Hear a voice note into `fields`; return a re-record citation if it was not heard."""
+        whole_note = Citation(
+            kind="audio",
+            source_id=upload.id,
+            t_start=0,
+            t_end=max(audio_seconds(upload.path), 0.1),
+        )
+        if self._transcriber is None:
+            self._log(session, case_id, "read", "Voice note skipped: no transcriber", None, [])
+            return None
+        try:
+            result = transcribe_note(NoteInput(upload=upload, case_id=case_id), self._transcriber)
+        except (ModelAPIError, StubFixtureMissingError) as error:
+            self._log(session, case_id, "read", f"Voice note could not be heard: {error}", None, [])
+            return whole_note
+        fields.update({field.name: field for field in result.fields})
+        heard = "; ".join(f'"{c.quote}"' for f in result.fields for c in f.citations)
+        self._log(
+            session,
+            case_id,
+            "read",
+            f"Heard voice note: {len(result.fields)} cited values"
+            + (f" ({heard})" if heard else "")
+            + (f"; {'; '.join(result.retake_reasons)}" if result.retake_reasons else ""),
+            result.model,
+            [c for field in result.fields for c in field.citations],
+        )
+        return whole_note if result.retake_reasons else None
 
     def _explain(self, session: Session, claim) -> None:
         payload = {

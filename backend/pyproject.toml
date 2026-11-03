@@ -9,6 +9,7 @@ dependencies = [
     "pydantic>=2.9",
     "sqlalchemy>=2.0",
     "uvicorn>=0.32",
+    "websockets>=14",
 ]
 
 [dependency-groups]

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { api, display, explanation, patientName, timeLeft, type Citation, type ClaimDetail, type Draft, type Field } from "./api";
+import { api, clock, display, explanation, patientName, timeLeft, type Citation, type ClaimDetail, type Draft, type Field } from "./api";
 import { Link, NO_ADVICE, REASON_TEXT, StatusPill } from "./ui";
 
 const LABELS: Record<string, string> = {
@@ -17,6 +17,7 @@ const LABELS: Record<string, string> = {
   invoice_total: "Invoice total",
   invoice_itemised: "Itemised invoice",
   service_code: "Service code",
+  voice_admission_date: "Admitted (voice note)",
 };
 
 type Selected = { label: string; value: string; citation: Citation };
@@ -90,8 +91,10 @@ export function Review({ claimId }: { claimId: string }) {
               <strong>{REASON_TEXT[flag.code] ?? flag.code}</strong>
               <span className="cites">
                 {flag.citations.map((c, i) => (
-                  <button key={i} className="chip" onClick={() => setSelected({ label: c.kind === "rule" ? c.source_id : "Photo region", value: c.quote ?? "", citation: c })}>
-                    {c.kind === "rule" ? `${c.source_id} · ${c.rule_version}` : "Photo region"}
+                  <button key={i} className="chip" onClick={() => setSelected({ label: c.kind === "rule" ? c.source_id : c.kind === "audio" ? "Voice note" : "Photo region", value: c.quote ?? "", citation: c })}>
+                    {c.kind === "rule" ? `${c.source_id} · ${c.rule_version}`
+                      : c.kind === "audio" ? `Voice ${clock(c.t_start ?? 0)}–${clock(c.t_end ?? 0)}`
+                      : "Photo region"}
                   </button>
                 ))}
               </span>
@@ -108,6 +111,8 @@ export function Review({ claimId }: { claimId: string }) {
               <p className="mono">{selected.citation.source_id} · {selected.citation.rule_version}</p>
               <p>Rule text is a placeholder until the SHA source document is registered in docs/SOURCES.md.</p>
             </div>
+          ) : selected?.citation.kind === "audio" ? (
+            <VoiceClip citation={selected.citation} />
           ) : selected ? (
             <figure className="photo">
               <img src={`/api/uploads/${selected.citation.source_id}/image`} alt={`Document for ${selected.label}`} />
@@ -188,6 +193,35 @@ export function Review({ claimId }: { claimId: string }) {
           ))}
         </ol>
       </section>
+    </div>
+  );
+}
+
+function VoiceClip({ citation }: { citation: Citation }) {
+  const audio = useRef<HTMLAudioElement>(null);
+  const clipping = useRef(false);
+  const start = citation.t_start ?? 0;
+  const end = citation.t_end ?? start;
+  function play() {
+    if (!audio.current) return;
+    clipping.current = true;
+    audio.current.currentTime = start;
+    void audio.current.play();
+  }
+  // Stop at the end of the cited span only when the clip button started it, so the
+  // native controls can still play the whole note.
+  function stopAtEnd() {
+    if (clipping.current && audio.current && audio.current.currentTime >= end) {
+      clipping.current = false;
+      audio.current.pause();
+    }
+  }
+  return (
+    <div className="voice">
+      <audio ref={audio} src={`/api/uploads/${citation.source_id}/file`} preload="auto" onTimeUpdate={stopAtEnd} onSeeking={() => { if (audio.current && Math.abs(audio.current.currentTime - start) > 0.5) clipping.current = false; }} controls />
+      <button onClick={play}>Play {clock(start)}–{clock(end)}</button>
+      {citation.quote && <blockquote>“{citation.quote}”</blockquote>}
+      <p className="mono">Source: {citation.source_id} · Muse Voice Transcribe</p>
     </div>
   );
 }
