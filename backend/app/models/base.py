@@ -6,7 +6,7 @@ Chat Completions format, so the switch is configuration, not code.
 """
 
 from enum import StrEnum
-from typing import Literal, Protocol
+from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, SecretStr
 from pydantic import Field as PydanticField
@@ -38,7 +38,7 @@ class ChatMessage(BaseModel):
     """One turn in a Chat Completions conversation."""
 
     role: Literal["system", "user", "assistant"]
-    content: str
+    content: str | list[dict[str, Any]]  # text, or OpenAI content parts for images and audio
 
 
 class ChatRequest(BaseModel):
@@ -76,7 +76,7 @@ class ModelClient(Protocol):
         ...
 
 
-class StubFixtureMissingError(KeyError):
+class StubFixtureMissingError(Exception):
     """The stub has no fixture for this case ID (and it never calls the network)."""
 
 

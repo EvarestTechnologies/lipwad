@@ -47,7 +47,7 @@ def test_reasoning_resolves_to_baseten_when_configured() -> None:
 def test_triage_resolves_to_modal_glimmer_when_configured() -> None:
     env = {
         "MODAL_GLIMMER_ENDPOINT_URL": GLIMMER_URL,
-        "MODAL_TOKEN_SECRET": "modal-secret [demo]",
+        "MODAL_GLIMMER_API_KEY": "glimmer-key [demo]",
         "META_MODEL_API_KEY": META_KEY,
     }
 
@@ -76,8 +76,8 @@ def test_coding_resolves_to_fireworks_when_configured() -> None:
     ("role", "model_id"),
     [
         (Role.SEGMENTATION, "sam-3.1"),
-        (Role.VISION, "muse-spark"),
-        (Role.TRANSCRIPTION, "muse-voice-transcribe"),
+        (Role.VISION, "muse-spark-1.3"),
+        (Role.TRANSCRIPTION, "muse-voice-transcribe-1.0"),
     ],
 )
 def test_meta_roles_resolve_to_the_meta_model_api(role: Role, model_id: str) -> None:
@@ -117,7 +117,7 @@ def test_partner_roles_fall_back_to_meta_when_unconfigured(role: Role, env: dict
 
     assert config.provider == "meta"
     assert config.base_url == "https://api.meta.ai/v1"
-    assert config.model_id == "muse-spark"
+    assert config.model_id == "muse-spark-1.3"
 
 
 def stub(role: Role = Role.REASONING) -> StubProvider:
@@ -281,3 +281,39 @@ def test_stub_embedding_matches_the_documented_construction() -> None:
     expected = [(byte - 128) / 128 for byte in digest[:8]]
 
     assert stub().embed("alpha").vector == expected
+
+
+def test_modal_account_token_is_never_used_as_an_endpoint_key() -> None:
+    env = {
+        "MODAL_GLIMMER_ENDPOINT_URL": GLIMMER_URL,
+        "MODAL_TOKEN_SECRET": "account-secret [demo]",
+        "META_MODEL_API_KEY": META_KEY,
+    }
+
+    config = resolve_provider(Role.TRIAGE, env)
+
+    assert config.provider == "meta"
+    assert "account-secret" not in config.api_key.get_secret_value()
+
+
+def test_reasoning_fallback_to_meta_is_logged(caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level("WARNING"):
+        resolve_provider(Role.REASONING, {"META_MODEL_API_KEY": META_KEY})
+
+    assert "BASETEN_API_KEY" in caplog.text
+
+
+def test_messages_can_carry_image_and_audio_parts() -> None:
+    message = ChatMessage(
+        role="user",
+        content=[
+            {"type": "text", "text": "Extract the admission date."},
+            {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,AAAA"}},
+        ],
+    )
+
+    assert message.model_dump()["content"][1]["type"] == "image_url"
+
+
+def test_missing_fixture_is_not_mistaken_for_a_missing_key() -> None:
+    assert not issubclass(StubFixtureMissingError, LookupError)

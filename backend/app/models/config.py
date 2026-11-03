@@ -6,6 +6,7 @@ API. Resolution is pure configuration: it never touches the network and never
 raises for a missing key. Key enforcement happens in the factory.
 """
 
+import logging
 import os
 from collections.abc import Mapping
 
@@ -20,13 +21,15 @@ FIREWORKS_BASE_URL = "https://api.fireworks.ai/inference/v1"
 BASETEN_REASONING_MODEL = "meta-models/muse-spark-open-1026"
 MODAL_GLIMMER_MODEL = "muse-glimmer"
 
+logger = logging.getLogger(__name__)
+
 META_MODEL_FOR = {
-    Role.REASONING: "muse-spark",
-    Role.TRIAGE: "muse-spark",
-    Role.CODING: "muse-spark",
+    Role.REASONING: "muse-spark-1.3",
+    Role.TRIAGE: "muse-spark-1.3",
+    Role.CODING: "muse-spark-1.3",
     Role.SEGMENTATION: "sam-3.1",
-    Role.VISION: "muse-spark",
-    Role.TRANSCRIPTION: "muse-voice-transcribe",
+    Role.VISION: "muse-spark-1.3",
+    Role.TRANSCRIPTION: "muse-voice-transcribe-1.0",
 }
 
 
@@ -57,6 +60,9 @@ def resolve_provider(role: Role, env: Mapping[str, str] | None = None) -> Provid
     if role is Role.REASONING:
         key = _present(settings.get("BASETEN_API_KEY"))
         if key is None:
+            logger.warning(
+                "BASETEN_API_KEY is not set: reasoning falls back to Meta, not Muse Spark Open"
+            )
             return _meta(role, settings)
         return ProviderConfig(
             role=role,
@@ -68,7 +74,8 @@ def resolve_provider(role: Role, env: Mapping[str, str] | None = None) -> Provid
         )
     if role is Role.TRIAGE:
         endpoint = _present(settings.get("MODAL_GLIMMER_ENDPOINT_URL"))
-        secret = _present(settings.get("MODAL_TOKEN_SECRET"))
+        # The endpoint's own key, never the Modal account token.
+        secret = _present(settings.get("MODAL_GLIMMER_API_KEY"))
         if endpoint is None or secret is None:
             return _meta(role, settings)
         return ProviderConfig(
@@ -77,7 +84,7 @@ def resolve_provider(role: Role, env: Mapping[str, str] | None = None) -> Provid
             base_url=endpoint,
             api_key=SecretStr(secret),
             model_id=_value(settings, "MODAL_GLIMMER_MODEL", MODAL_GLIMMER_MODEL),
-            key_env_var="MODAL_TOKEN_SECRET",
+            key_env_var="MODAL_GLIMMER_API_KEY",
         )
     if role is Role.CODING:
         key = _present(settings.get("FIREWORKS_API_KEY"))
