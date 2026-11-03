@@ -1,0 +1,120 @@
+{
+  "fields": [
+    {
+      "name": "patient_name",
+      "value": "Zawadi Njeri",
+      "confidence": 0.99,
+      "bbox": [
+        0.417,
+        0.231,
+        0.574,
+        0.251
+      ],
+      "quote": "Zawadi Njeri"
+    },
+    {
+      "name": "patient_ref",
+      "value": "PT-003",
+      "confidence": 0.99,
+      "bbox": [
+        0.417,
+        0.277,
+        0.497,
+        0.296
+      ],
+      "quote": "PT-003"
+    },
+    {
+      "name": "visit_type",
+      "value": "Maternity",
+      "confidence": 0.99,
+      "bbox": [
+        0.417,
+        0.323,
+        0.527,
+        0.346
+      ],
+      "quote": "Maternity"
+    },
+    {
+      "name": "admission_date",
+      "value": "2026-10-12",
+      "confidence": 0.99,
+      "bbox": [
+        0.417,
+        0.372,
+        0.553,
+        0.393
+      ],
+      "quote": "2026-10-12"
+    },
+    {
+      "name": "discharge_date",
+      "value": "2026-10-14",
+      "confidence": 0.99,
+      "bbox": [
+        0.417,
+        0.42,
+        0.553,
+        0.441
+      ],
+      "quote": "2026-10-14"
+    },
+    {
+      "name": "diagnosis",
+      "value": "Normal vaginal delivery",
+      "confidence": 0.99,
+      "bbox": [
+        0.417,
+        0.481,
+        0.68,
+        0.503
+      ],
+      "quote": "Normal vaginal delivery"
+    },
+    {
+      "name": "practitioner_name",
+      "value": "Dr. Amani Otieno",
+      "confidence": 0.99,
+      "bbox": [
+        0.417,
+        0.531,
+        0.632,
+        0.552
+      ],
+      "quote": "Dr. Amani Otieno"
+    },
+    {
+      "name": "practitioner_id",
+      "value": "PR-100",
+      "confidence": 0.99,
+      "bbox": [
+        0.417,
+        0.582,
+        0.498,
+        0.602
+      ],
+      "quote": "PR-100"
+    },
+    {
+      "name": "facility_id",
+      "value": "FAC-L4",
+      "confidence": 0.98,
+      "bbox": [
+        0.248,
+        0.11,
+        0.313,
+        0.128
+      ],
+      "quote": "FAC-L4"
+    }
+  ],
+  "signature_present": true,
+  "signature_bbox": [
+    0.417,
+    0.764,
+    0.806,
+    0.796
+  ],
+  "unreadable": []
+}

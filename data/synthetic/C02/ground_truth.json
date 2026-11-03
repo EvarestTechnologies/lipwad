@@ -9,9 +9,10 @@
   "expected_status": "green",
   "expected_reasons": [],
   "fields": {
-    "patient_name": "Synthetic Patient 02 [demo]",
+    "patient_name": "Baraka Mwangi [demo]",
     "admission_date": "2026-10-12",
-    "discharge_date": "2026-10-14"
+    "discharge_date": "2026-10-14",
+    "diagnosis": "Pneumonia, admitted for IV antibiotics"
   },
   "codes": [
     "PLACEHOLDER-001"
@@ -19,5 +20,26 @@
   "mock_hie_outcome": "accept",
   "mock_hie_reasons": [],
   "days_since_outcome": null,
-  "practitioner_registered": true
+  "practitioner_registered": true,
+  "documents_service_type": "inpatient",
+  "invoice_items": [
+    [
+      "Bed days x2",
+      6000
+    ],
+    [
+      "IV antibiotics",
+      4500
+    ],
+    [
+      "Chest X-ray",
+      2500
+    ],
+    [
+      "Consultation",
+      1500
+    ]
+  ],
+  "invoice_itemised": true,
+  "form_signed": true
 }

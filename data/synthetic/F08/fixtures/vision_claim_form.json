@@ -1,0 +1,21 @@
+{
+  "fields": [],
+  "signature_present": true,
+  "signature_bbox": [
+    0.415,
+    0.765,
+    0.81,
+    0.81
+  ],
+  "unreadable": [
+    "patient_name",
+    "patient_ref",
+    "visit_type",
+    "admission_date",
+    "discharge_date",
+    "diagnosis",
+    "practitioner_name",
+    "practitioner_id",
+    "facility_id"
+  ]
+}

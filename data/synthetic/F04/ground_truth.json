@@ -11,9 +11,10 @@
     "practitioner_not_found"
   ],
   "fields": {
-    "patient_name": "Synthetic Patient 07 [demo]",
+    "patient_name": "Halima Abdi [demo]",
     "admission_date": "2026-10-12",
-    "discharge_date": "2026-10-14"
+    "discharge_date": "2026-10-14",
+    "diagnosis": "Pneumonia, admitted for IV antibiotics"
   },
   "codes": [
     "PLACEHOLDER-001"
@@ -21,5 +22,26 @@
   "mock_hie_outcome": "accept",
   "mock_hie_reasons": [],
   "days_since_outcome": null,
-  "practitioner_registered": false
+  "practitioner_registered": false,
+  "documents_service_type": "inpatient",
+  "invoice_items": [
+    [
+      "Bed days x2",
+      6000
+    ],
+    [
+      "IV antibiotics",
+      4500
+    ],
+    [
+      "Chest X-ray",
+      2500
+    ],
+    [
+      "Consultation",
+      1500
+    ]
+  ],
+  "invoice_itemised": true,
+  "form_signed": true
 }

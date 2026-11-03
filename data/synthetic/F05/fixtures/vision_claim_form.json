@@ -1,0 +1,120 @@
+{
+  "fields": [
+    {
+      "name": "patient_name",
+      "value": "Chebet Rotich",
+      "confidence": 0.99,
+      "bbox": [
+        0.41,
+        0.224,
+        0.595,
+        0.248
+      ],
+      "quote": "Chebet Rotich"
+    },
+    {
+      "name": "patient_ref",
+      "value": "PT-008",
+      "confidence": 0.99,
+      "bbox": [
+        0.41,
+        0.275,
+        0.51,
+        0.3
+      ],
+      "quote": "PT-008"
+    },
+    {
+      "name": "visit_type",
+      "value": "Inpatient",
+      "confidence": 0.99,
+      "bbox": [
+        0.41,
+        0.332,
+        0.54,
+        0.357
+      ],
+      "quote": "Inpatient"
+    },
+    {
+      "name": "admission_date",
+      "value": "2026-10-12",
+      "confidence": 0.99,
+      "bbox": [
+        0.41,
+        0.385,
+        0.57,
+        0.41
+      ],
+      "quote": "2026-10-12"
+    },
+    {
+      "name": "discharge_date",
+      "value": "2026-10-14",
+      "confidence": 0.99,
+      "bbox": [
+        0.41,
+        0.43,
+        0.57,
+        0.455
+      ],
+      "quote": "2026-10-14"
+    },
+    {
+      "name": "diagnosis",
+      "value": "Pneumonia, admitted for IV antibiotics",
+      "confidence": 0.99,
+      "bbox": [
+        0.41,
+        0.488,
+        0.895,
+        0.512
+      ],
+      "quote": "Pneumonia, admitted for IV antibiotics"
+    },
+    {
+      "name": "practitioner_name",
+      "value": "Dr. Amani Otieno",
+      "confidence": 0.99,
+      "bbox": [
+        0.41,
+        0.545,
+        0.632,
+        0.57
+      ],
+      "quote": "Dr. Amani Otieno"
+    },
+    {
+      "name": "practitioner_id",
+      "value": "PR-100",
+      "confidence": 0.99,
+      "bbox": [
+        0.41,
+        0.6,
+        0.51,
+        0.623
+      ],
+      "quote": "PR-100"
+    },
+    {
+      "name": "facility_id",
+      "value": "FAC-L4",
+      "confidence": 0.98,
+      "bbox": [
+        0.234,
+        0.114,
+        0.332,
+        0.133
+      ],
+      "quote": "FAC-L4"
+    }
+  ],
+  "signature_present": false,
+  "signature_bbox": [
+    0.41,
+    0.79,
+    0.812,
+    0.82
+  ],
+  "unreadable": []
+}

@@ -1,0 +1,45 @@
+{
+  "lines": [
+    {
+      "description": "Consultation",
+      "amount": 1000,
+      "bbox": [
+        65,
+        447,
+        865,
+        479
+      ]
+    },
+    {
+      "description": "Malaria test",
+      "amount": 800,
+      "bbox": [
+        65,
+        524,
+        835,
+        556
+      ]
+    },
+    {
+      "description": "Medication",
+      "amount": 700,
+      "bbox": [
+        65,
+        601,
+        835,
+        633
+      ]
+    }
+  ],
+  "total": {
+    "amount": 2500,
+    "bbox": [
+      65,
+      716,
+      871,
+      750
+    ]
+  },
+  "itemised": true,
+  "unreadable": []
+}

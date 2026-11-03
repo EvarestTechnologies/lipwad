@@ -9,9 +9,10 @@
   "expected_status": "green",
   "expected_reasons": [],
   "fields": {
-    "patient_name": "Synthetic Patient 03 [demo]",
+    "patient_name": "Zawadi Njeri [demo]",
     "admission_date": "2026-10-12",
-    "discharge_date": "2026-10-14"
+    "discharge_date": "2026-10-14",
+    "diagnosis": "Normal vaginal delivery"
   },
   "codes": [
     "PLACEHOLDER-001"
@@ -19,5 +20,22 @@
   "mock_hie_outcome": "accept",
   "mock_hie_reasons": [],
   "days_since_outcome": null,
-  "practitioner_registered": true
+  "practitioner_registered": true,
+  "documents_service_type": "maternity",
+  "invoice_items": [
+    [
+      "Delivery package",
+      10000
+    ],
+    [
+      "Bed day x1",
+      3000
+    ],
+    [
+      "Medication",
+      1200
+    ]
+  ],
+  "invoice_itemised": true,
+  "form_signed": true
 }
