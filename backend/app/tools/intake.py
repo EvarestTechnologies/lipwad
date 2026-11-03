@@ -71,7 +71,7 @@ def extract_document(document: DocumentInput, client: ModelClient) -> Extraction
     """Read one document into cited fields, or ask for a retake of what is unreadable."""
     encoded = base64.b64encode(Path(document.upload.path).read_bytes()).decode()
     request = ChatRequest(
-        case_id=f"{document.case_id}/{document.kind}",
+        case_id=f"{document.case_id}/{Path(document.upload.filename).stem}",
         json_output=True,
         messages=[
             ChatMessage(
