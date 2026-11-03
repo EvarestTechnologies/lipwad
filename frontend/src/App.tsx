@@ -1,16 +1,22 @@
 import { useEffect, useState } from "react";
 
+import { ClaimsScreen } from "./Claims";
+import { MoneyScreen } from "./Money";
 import { Review } from "./Review";
+import { RulesScreen } from "./Rules";
 import { TodayScreen } from "./Today";
+import { Link } from "./ui";
 
 function currentPath() {
-  return window.location.pathname;
+  return window.location.pathname.replace(/(.)\/+$/, "$1");
 }
 
-export function navigate(path: string) {
-  window.history.pushState({}, "", path);
-  window.dispatchEvent(new PopStateEvent("popstate"));
-}
+const SECTIONS = [
+  { to: "/", label: "Today" },
+  { to: "/claims", label: "Claims" },
+  { to: "/money", label: "Money" },
+  { to: "/rules", label: "SHA rules" },
+];
 
 export function App() {
   const [path, setPath] = useState(currentPath());
@@ -20,25 +26,26 @@ export function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
   const claimId = path.match(/^\/claims\/([\w-]+)/)?.[1];
+  const section = claimId ? "/claims" : SECTIONS.find((s) => s.to === path)?.to ?? "/";
+  const screen = claimId ? <Review key={claimId} claimId={claimId} />
+    : section === "/claims" ? <ClaimsScreen />
+    : section === "/money" ? <MoneyScreen />
+    : section === "/rules" ? <RulesScreen />
+    : <TodayScreen />;
+  const links = SECTIONS.map((s) => <Link key={s.to} to={s.to} current={s.to === section}>{s.label}</Link>);
 
   return (
     <div className="shell">
       <nav className="sidebar" aria-label="Main">
-        <a className="logo" href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }}>lipwad</a>
-        <a href="/" aria-current={!claimId ? "page" : undefined} onClick={(e) => { e.preventDefault(); navigate("/"); }}>Today</a>
-        <a href="/" aria-current={claimId ? "page" : undefined} onClick={(e) => { e.preventDefault(); navigate("/"); }}>Claims</a>
-        <span className="nav-muted">Money</span>
-        <span className="nav-muted">SHA rules</span>
+        <Link to="/" className="logo">lipwad</Link>
+        {links}
         <div className="facility">
           <strong>Upendo County Hospital</strong>
           <span>Level 4 · demo data</span>
         </div>
       </nav>
-      <main className="content">{claimId ? <Review claimId={claimId} /> : <TodayScreen />}</main>
-      <nav className="tabbar" aria-label="Main">
-        <a href="/" aria-current={!claimId ? "page" : undefined} onClick={(e) => { e.preventDefault(); navigate("/"); }}>Today</a>
-        <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }}>Claims</a>
-      </nav>
+      <main className="content">{screen}</main>
+      <nav className="tabbar" aria-label="Main">{links}</nav>
     </div>
   );
 }

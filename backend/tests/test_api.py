@@ -132,3 +132,18 @@ def test_unused_paths_are_not_found(client: TestClient) -> None:
 
 def test_data_dir_has_case_documents() -> None:
     assert Path(DATA_DIR, "F05", "claim_form_signed.png").exists()
+
+
+def test_rules_catalogue_lists_placeholder_versions(client: TestClient) -> None:
+    rules = client.get("/api/rules").json()
+
+    assert {"id", "checks", "version", "source_registered"} <= set(rules[0])
+    assert all(rule["version"] == "v[PLACEHOLDER]" for rule in rules)
+    assert not any(rule["source_registered"] for rule in rules)
+
+
+def test_today_feed_is_short(client: TestClient) -> None:
+    for case_id in ("C01", "C02", "F01", "F02", "F03"):
+        client.post(f"/api/claims/{case_id}/run")
+
+    assert len(client.get("/api/today").json()["activity"]) == 8

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { api, ksh, timeLeft, type Summary, type Today } from "./api";
-import { navigate } from "./App";
+import { api, headline, ksh, patientName, timeLeft, type Summary, type Today } from "./api";
+import { navigate } from "./router";
 import { NO_ADVICE, REASON_TEXT, StatusPill } from "./ui";
 
 export function TodayScreen() {
@@ -62,7 +62,7 @@ export function TodayScreen() {
                 <span className="mono">{task.id}</span>
                 <span className="money">{ksh(task.amount_ksh)}</span>
               </div>
-              <strong>{task.patient_name?.replace(" [demo]", "") ?? task.id}</strong>
+              <strong>{patientName(task.patient_name, true)}</strong>
               <p>{REASON_TEXT[task.reasons[0]] ?? task.reasons[0]}</p>
               {task.deadline && <p className="deadline">{timeLeft(task.deadline)}</p>}
               <button onClick={() => navigate(`/claims/${task.id}`)}>{task.rescue ? "Open rescue" : task.actions[0]}</button>
@@ -78,7 +78,7 @@ export function TodayScreen() {
             {ready.map((c) => (
               <li key={c.id}>
                 <span className="mono">{c.id}</span>
-                <span>{c.patient_name?.replace(" [demo]", "")}</span>
+                <span>{patientName(c.patient_name, true)}</span>
                 <span className="money">{ksh(c.amount_ksh)}</span>
                 <button className="secondary" onClick={() => navigate(`/claims/${c.id}`)}>Review</button>
               </li>
@@ -111,11 +111,12 @@ export function TodayScreen() {
             <li key={index}>
               <time className="mono">{new Date(step.at).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}</time>
               <span className="mono chip">{step.claim_id}</span>
-              <span>{step.text}</span>
+              <span>{headline(step.text)}</span>
               {step.model && <span className="chip model">{step.model}</span>}
             </li>
           ))}
         </ol>
+        <p className="muted">Open a claim to see every step and the full explanation in English and Kiswahili.</p>
       </section>
       <p className="guardrail">{NO_ADVICE}</p>
     </div>

@@ -14,8 +14,23 @@ RULE_VERSION = "v[PLACEHOLDER]"
 DEADLINE_WARNING = timedelta(hours=48)
 MIN_INPATIENT_LEVEL = 3
 
+# What Lipwad's check for each placeholder rule ID looks at. These describe Lipwad's
+# behaviour, not SHA rule text: the source documents are not yet registered in
+# docs/SOURCES.md, so the rule wording itself stays a placeholder.
+RULES = {
+    "SHA-DOC-SIGNATURE": "Flags a claim form read as having no clinician signature.",
+    "SHA-DOC-INVOICE": "Flags an invoice read as showing a total without separate priced lines.",
+    "SHA-SERVICE-TYPE": "Flags bed days billed on a visit recorded as outpatient or same-day.",
+    "SHA-PRACTITIONER-REGISTRY": "Flags a practitioner number the registry lookup does not find.",
+    "SHA-FACILITY-LEVEL": f"Flags inpatient care at a facility below level {MIN_INPATIENT_LEVEL}.",
+    "SHA-RESUBMISSION": "Flags a returned or rejected claim and its resubmission countdown.",
+    "TERM-PLACEHOLDER": "Marks a service code as a placeholder until terminology is registered.",
+}
+
 
 def rule(rule_id: str) -> Citation:
+    if rule_id not in RULES:
+        raise KeyError(f"{rule_id} is not in the rules catalogue")
     return Citation(kind="rule", source_id=rule_id, rule_version=RULE_VERSION)
 
 

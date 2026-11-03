@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { api, timeLeft, type Citation, type ClaimDetail, type Draft, type Field } from "./api";
-import { navigate } from "./App";
-import { NO_ADVICE, REASON_TEXT, StatusPill } from "./ui";
+import { api, display, explanation, patientName, timeLeft, type Citation, type ClaimDetail, type Draft, type Field } from "./api";
+import { Link, NO_ADVICE, REASON_TEXT, StatusPill } from "./ui";
 
 const LABELS: Record<string, string> = {
   patient_name: "Patient name",
@@ -15,7 +14,7 @@ const LABELS: Record<string, string> = {
   practitioner_id: "Practitioner number",
   facility_id: "Facility",
   clinician_signature: "Clinician signature",
-  invoice_total: "Invoice total (KSh)",
+  invoice_total: "Invoice total",
   invoice_itemised: "Itemised invoice",
   service_code: "Service code",
 };
@@ -33,7 +32,9 @@ export function Review({ claimId }: { claimId: string }) {
 
   const load = useCallback(async () => {
     try {
-      setDetail(await api.claim(claimId));
+      const next = await api.claim(claimId);
+      setDetail(next);
+      setSelected((current) => current ?? firstEvidence(next));
     } catch (e) {
       setError((e as Error).message);
     }
@@ -46,6 +47,7 @@ export function Review({ claimId }: { claimId: string }) {
     try {
       await action();
       setConfirmed(false);
+      setSelected(null);
       await load();
     } catch (e) {
       setError((e as Error).message);
@@ -58,20 +60,20 @@ export function Review({ claimId }: { claimId: string }) {
   const { claim } = detail;
   const rescue = claim.lifecycle === "returned" || claim.lifecycle === "rejected";
   const canSubmit = claim.readiness === "green" && claim.lifecycle === "draft";
-  const patient = claim.fields.find((f) => f.name === "patient_name")?.value.replace(" [demo]", "");
+  const patient = patientName(claim.fields.find((f) => f.name === "patient_name")?.value ?? null, claim.readiness !== null);
   const fields = [...claim.fields, ...claim.coded_lines].filter((f) => !f.name.startsWith("invoice_line"));
 
   function select(field: Field) {
     const citation = field.citations.find((c) => c.kind === "image") ?? field.citations[0];
-    setSelected({ label: LABELS[field.name] ?? field.name, value: field.value, citation });
+    setSelected(evidenceFor(field, citation));
   }
 
   return (
     <div className="review">
-      <p className="crumbs"><a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }}>Claims</a> / <span className="mono">{claim.id}</span></p>
+      <p className="crumbs"><Link to="/claims">Claims</Link> / <span className="mono">{claim.id}</span></p>
       <header className="review-head">
         <div>
-          <h1>{patient ?? claim.id}</h1>
+          <h1>{patient}</h1>
           <StatusPill readiness={claim.readiness} lifecycle={claim.lifecycle} />
           {claim.resubmission_deadline && <span className="deadline"> {timeLeft(claim.resubmission_deadline)}</span>}
         </div>
@@ -88,7 +90,7 @@ export function Review({ claimId }: { claimId: string }) {
               <strong>{REASON_TEXT[flag.code] ?? flag.code}</strong>
               <span className="cites">
                 {flag.citations.map((c, i) => (
-                  <button key={i} className="chip" onClick={() => setSelected({ label: flag.code, value: c.quote ?? "", citation: c })}>
+                  <button key={i} className="chip" onClick={() => setSelected({ label: c.kind === "rule" ? c.source_id : "Photo region", value: c.quote ?? "", citation: c })}>
                     {c.kind === "rule" ? `${c.source_id} · ${c.rule_version}` : "Photo region"}
                   </button>
                 ))}
@@ -125,7 +127,7 @@ export function Review({ claimId }: { claimId: string }) {
               <li key={field.name}>
                 <button className="field" aria-pressed={selected?.label === (LABELS[field.name] ?? field.name)} onClick={() => select(field)}>
                   <span className="label">{LABELS[field.name] ?? field.name}</span>
-                  <span className="value">{field.value.replace(" [demo]", "")}</span>
+                  <span className="value">{display(field.name, field.value)}</span>
                   <span className="chip">{field.citations.length} source{field.citations.length === 1 ? "" : "s"}</span>
                 </button>
               </li>
@@ -148,7 +150,7 @@ export function Review({ claimId }: { claimId: string }) {
                 <thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
                 <tbody>
                   {draft.changes.map((c) => (
-                    <tr key={c.field}><td>{LABELS[c.field] ?? c.field}</td><td>{c.before ?? "—"}</td><td>{c.after}</td></tr>
+                    <tr key={c.field}><td>{LABELS[c.field] ?? c.field}</td><td>{c.before ? display(c.field, c.before) : "—"}</td><td>{display(c.field, c.after)}</td></tr>
                   ))}
                 </tbody>
               </table>
@@ -180,7 +182,7 @@ export function Review({ claimId }: { claimId: string }) {
           {detail.activity.map((step, i) => (
             <li key={i}>
               <time className="mono">{new Date(step.at).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}</time>
-              <span>{step.text}</span>
+              <Explained text={step.text} />
               {step.model && <span className="chip model">{step.model}</span>}
             </li>
           ))}
@@ -188,6 +190,34 @@ export function Review({ claimId }: { claimId: string }) {
       </section>
     </div>
   );
+}
+
+function Explained({ text }: { text: string }) {
+  const { en, sw } = explanation(text);
+  return (
+    <span className="explained">
+      <span>{en}</span>
+      {sw && <span lang="sw" className="muted">{sw}</span>}
+    </span>
+  );
+}
+
+function evidenceFor(field: Field, citation: Citation): Selected {
+  return { label: LABELS[field.name] ?? field.name, value: field.value, citation };
+}
+
+/** Opens the evidence panel on the first flagged photo region, or the first field. */
+function firstEvidence(detail: ClaimDetail): Selected | null {
+  for (const flag of detail.claim.flags) {
+    const citation = flag.citations.find((c) => c.kind === "image");
+    if (citation) {
+      const same = (c: Citation) => c.source_id === citation.source_id && JSON.stringify(c.region) === JSON.stringify(citation.region);
+      const field = detail.claim.fields.find((f) => f.citations.some(same));
+      return field ? evidenceFor(field, citation) : { label: "Photo region", value: "", citation };
+    }
+  }
+  const field = detail.claim.fields.find((f) => f.citations.some((c) => c.kind === "image"));
+  return field ? evidenceFor(field, field.citations.find((c) => c.kind === "image")!) : null;
 }
 
 function Highlight({ region }: { region: number[][] }) {

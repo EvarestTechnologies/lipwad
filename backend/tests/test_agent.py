@@ -28,7 +28,6 @@ class FakeReasoning:
     def complete(self, request):
         self.requests.append(request)
         body = {
-            "summary": "Checked the claim against its documents.",
             "explanation_en": "Explanation [demo]",
             "explanation_sw": "Maelezo [demo]",
         }
@@ -140,3 +139,27 @@ def test_activity_names_the_model_that_did_the_work() -> None:
 
     assert all(step.model != "muse-spark-1.3" for step in activity if step.kind == "read")
     assert any(step.model == "stub" for step in activity if step.kind == "read")
+
+
+@pytest.mark.parametrize("case_id", GATE)
+def test_every_cited_rule_is_in_the_catalogue(case_id: str) -> None:
+    from app.agent.rules import RULES
+
+    claim, _, _ = run(case_id)
+    cited = {
+        c.source_id
+        for item in [*claim.flags, *claim.coded_lines]
+        for c in item.citations
+        if c.kind == "rule"
+    }
+
+    assert cited <= set(RULES)
+
+
+def test_explanation_is_logged_english_first_then_kiswahili() -> None:
+    _, activity, reasoning = run("F01")
+    step = next(step for step in activity if step.model == "fake")
+    prompt = reasoning.requests[0].messages[0].content
+
+    assert step.text == "Explanation [demo] | SW: Maelezo [demo]"
+    assert "hospital claims clerk" in prompt and "approve" in prompt
