@@ -43,11 +43,8 @@ class ConfirmBody(BaseModel):
 
 
 def router(services: Services) -> APIRouter:
-    def demo_reset() -> None:
-        if services.demo_reset is not None:
-            services.demo_reset.maybe()
-
-    api = APIRouter(dependencies=[Depends(demo_reset)])
+    api = APIRouter(dependencies=[Depends(services.maybe_reset)])
+    admin = APIRouter()
 
     @contextmanager
     def working_on(claim_id: str, paid: bool = False):
@@ -92,8 +89,12 @@ def router(services: Services) -> APIRouter:
     def run(claim_id: str) -> dict:
         with services.sessions() as session:
             claim = detail(session, claim_id)["claim"]
-            if claim["lifecycle"] in (Lifecycle.SUBMITTED.value, Lifecycle.PAID.value):
+            if _with_sha(claim):
                 raise HTTPException(status_code=409, detail=f"{claim_id} is already with SHA")
+            if _corrected(claim) and claim["lifecycle"] != Lifecycle.DRAFT.value:
+                raise HTTPException(
+                    status_code=409, detail=f"{claim_id} has a drafted fix; resubmit it"
+                )
         with services.sessions() as session, working_on(claim_id, paid=True):
             uploads = case_uploads(services.data_dir, claim_id)
             try:
@@ -118,8 +119,16 @@ def router(services: Services) -> APIRouter:
     def rescue(claim_id: str) -> dict:
         with services.sessions() as session:
             claim = detail(session, claim_id)["claim"]
-            if claim["lifecycle"] in (Lifecycle.SUBMITTED.value, Lifecycle.PAID.value):
+            if _with_sha(claim):
                 raise HTTPException(status_code=409, detail=f"{claim_id} is already with SHA")
+            if _corrected(claim):
+                raise HTTPException(
+                    status_code=409, detail=f"{claim_id} already has its corrected page"
+                )
+            if claim["lifecycle"] == Lifecycle.DRAFT.value and claim["readiness"] is None:
+                raise HTTPException(
+                    status_code=409, detail=f"Review {claim_id} before adding a corrected page"
+                )
             upload = signed_upload(services.data_dir, claim_id)
             if upload is None:
                 raise HTTPException(status_code=409, detail="no corrected page to read")
@@ -152,7 +161,7 @@ def router(services: Services) -> APIRouter:
             media = "audio/wav" if row.path.endswith(".wav") else "image/png"
             return FileResponse(row.path, media_type=media)
 
-    @api.post("/demo/snapshot", include_in_schema=False)
+    @admin.post("/demo/snapshot", include_in_schema=False)
     def snapshot(x_admin_key: Annotated[str | None, Header()] = None) -> dict:
         """Save the current demo as the state the scheduled reset restores."""
         if not services.admin_key or services.demo is None:
@@ -184,7 +193,22 @@ def router(services: Services) -> APIRouter:
                 ],
             }
 
-    return api
+    outer = APIRouter()
+    outer.include_router(api)
+    outer.include_router(admin)
+    return outer
+
+
+def _with_sha(claim: dict) -> bool:
+    return claim["lifecycle"] in (Lifecycle.SUBMITTED.value, Lifecycle.PAID.value)
+
+
+def _corrected(claim: dict) -> bool:
+    return any(
+        citation["source_id"].endswith("-claim_form_signed")
+        for field in claim["fields"]
+        for citation in field["citations"]
+    )
 
 
 def _confirmation(body: ConfirmBody) -> Confirmation:

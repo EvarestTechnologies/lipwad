@@ -65,7 +65,7 @@ export function Review({ claimId }: { claimId: string }) {
           <StatusPill readiness={claim.readiness} lifecycle={claim.lifecycle} />
           {claim.resubmission_deadline && <span className="deadline"> {timeLeft(claim.resubmission_deadline)}</span>}
         </div>
-        {!withSha && !corrected && (
+        {!withSha && !(rescue && corrected) && (
           <button className="secondary" disabled={busy !== null} onClick={() => act("run", () => api.run(claim.id))}>
             {busy === "run" ? "Lipwad is reading…" : claim.readiness ? "Review again" : "Review with Lipwad"}
           </button>
@@ -130,7 +130,7 @@ export function Review({ claimId }: { claimId: string }) {
         </section>
       </div>
 
-      {(canFix || draft || (rescue && !corrected)) && (
+      {(canFix || (draft && !withSha) || (rescue && !corrected)) && (
         <section className="rescue" aria-label={rescue ? "Rescue" : "Fix"}>
           <h2>{rescue ? "Rescue" : "Fix"}</h2>
           {!draft && canFix ? (
@@ -168,7 +168,10 @@ export function Review({ claimId }: { claimId: string }) {
           </label>
           <button
             disabled={!confirmed || !name.trim() || busy !== null}
-            onClick={() => act("submit", () => (rescue ? api.resubmit(claim.id, name) : api.submit(claim.id, name)))}
+            onClick={() => act("submit", async () => {
+              await (rescue ? api.resubmit(claim.id, name) : api.submit(claim.id, name));
+              setDraft(null);
+            })}
           >
             {rescue ? "Approve fix & resubmit" : "OK & submit to SHA"}
           </button>

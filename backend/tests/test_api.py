@@ -266,3 +266,31 @@ def test_requests_that_cannot_run_do_not_spend_the_budget(tmp_path) -> None:
     assert client.post("/api/claims/F02/rescue").status_code == 409
     usage = (tmp_path / "usage.json").read_text()
     assert '"count": 1' in usage
+
+
+def test_an_unreviewed_draft_cannot_take_a_corrected_page(client: TestClient) -> None:
+    assert client.post("/api/claims/F01/rescue").status_code == 409
+
+
+def test_a_corrected_draft_can_be_reviewed_again_with_its_signed_page(client: TestClient) -> None:
+    client.post("/api/claims/F01/run")
+    client.post("/api/claims/F01/rescue")
+
+    response = client.post("/api/claims/F01/run")
+    claim = response.json()["claim"]
+
+    assert response.status_code == 200
+    assert claim["readiness"] == "green"
+    signature = next(f for f in claim["fields"] if f["name"] == "clinician_signature")
+    assert signature["citations"][0]["source_id"] == "F01-claim_form_signed"
+
+
+def test_pointless_paid_requests_are_refused_before_spending(tmp_path) -> None:
+    from app.services import RunBudget
+
+    client, _ = make_client(budget=RunBudget(tmp_path / "usage.json", per_day=3))
+    client.post("/api/claims/F05/rescue")
+
+    assert client.post("/api/claims/F05/rescue").status_code == 409
+    assert client.post("/api/claims/F05/run").status_code == 409
+    assert '"count": 1' in (tmp_path / "usage.json").read_text()

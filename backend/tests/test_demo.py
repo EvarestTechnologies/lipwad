@@ -86,3 +86,57 @@ def test_snapshot_endpoint_is_absent_without_a_key(tmp_path: Path) -> None:
     services = Services(sessions=sessions, agent=agent, hie=hie, data_dir=DATA_DIR, demo=demo)
 
     assert TestClient(create_app(None, services)).post("/api/demo/snapshot").status_code == 404
+
+
+def test_taking_a_snapshot_never_triggers_a_reset(tmp_path: Path) -> None:
+    from app.services import DemoReset
+
+    now = [datetime.now(UTC)]
+    demo, sessions, agent, hie = build(tmp_path, now)
+    resets = []
+    services = Services(
+        sessions=sessions,
+        agent=agent,
+        hie=hie,
+        data_dir=DATA_DIR,
+        demo=demo,
+        admin_key="k" * 32,
+        demo_reset=DemoReset(tmp_path / "marker", 6, lambda: resets.append(1)),
+    )
+    client = TestClient(create_app(None, services))
+
+    assert client.post("/api/demo/snapshot", headers={"x-admin-key": "k" * 32}).status_code == 200
+    assert resets == []
+
+
+def test_a_failed_reset_does_not_take_the_demo_down(tmp_path: Path) -> None:
+    from app.services import DemoReset
+
+    def broken() -> None:
+        raise OSError("volume unavailable")
+
+    reset = DemoReset(tmp_path / "marker", 6, broken)
+    reset.maybe()
+
+    assert (tmp_path / "marker").exists()
+
+
+def test_reset_waits_for_claim_work_in_flight(tmp_path: Path) -> None:
+    from app.services import DemoReset
+
+    now = [datetime.now(UTC)]
+    demo, sessions, agent, hie = build(tmp_path, now)
+    resets = []
+    services = Services(
+        sessions=sessions,
+        agent=agent,
+        hie=hie,
+        data_dir=DATA_DIR,
+        demo_reset=DemoReset(tmp_path / "marker", 6, lambda: resets.append(1)),
+    )
+    with services.claim_lock("C01"):
+        services.maybe_reset()
+    assert resets == [] and not (tmp_path / "marker").exists()
+
+    services.maybe_reset()
+    assert resets == [1]

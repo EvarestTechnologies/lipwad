@@ -85,10 +85,10 @@ class ClaimAgent:
         claim = load_claim(session, case_id)
         if claim.lifecycle in (Lifecycle.SUBMITTED, Lifecycle.PAID):
             raise RescueError(f"{case_id} is already with SHA")
-        if any(
-            c.source_id.endswith("-claim_form_signed") for f in claim.fields for c in f.citations
-        ):
-            raise RescueError(f"{case_id} already has its corrected page; submit it instead")
+        if _corrected(claim):
+            if claim.lifecycle is not Lifecycle.DRAFT:
+                raise RescueError(f"{case_id} has a drafted fix; resubmit it instead")
+            uploads = _with_corrected_page(uploads, case_id)
         known = {upload.id for upload in list_uploads(session, case_id)}
         fields: dict[str, Field] = {}
         retake: list[str] = []
@@ -99,7 +99,7 @@ class ClaimAgent:
             if upload.kind == "audio":
                 voice_retake = self._listen(session, case_id, upload, fields)
                 continue
-            kind = upload.filename.removesuffix(".png")
+            kind = "invoice" if upload.filename == "invoice.png" else "claim_form"
             result = extract_document(
                 DocumentInput(upload=upload, case_id=case_id, kind=kind), self._vision
             )
@@ -109,7 +109,8 @@ class ClaimAgent:
                 session,
                 case_id,
                 "read",
-                f"Read {kind}: {_count(len(result.fields), 'cited value')}"
+                f"Read {upload.filename.removesuffix('.png')}: "
+                f"{_count(len(result.fields), 'cited value')}"
                 + (
                     f"; retake needed ({'; '.join(result.retake_reasons)})"
                     if result.retake_reasons
@@ -226,6 +227,10 @@ class ClaimAgent:
         claim = load_claim(session, case_id)
         if claim.lifecycle not in (Lifecycle.DRAFT, Lifecycle.RETURNED, Lifecycle.REJECTED):
             raise RescueError(f"{case_id} is already with SHA")
+        if _corrected(claim):
+            raise RescueError(f"{case_id} already has its corrected page")
+        if claim.lifecycle is Lifecycle.DRAFT and claim.readiness is None:
+            raise RescueError(f"Review {case_id} before adding a corrected page")
         reasons = [flag.code for flag in claim.flags if flag.code not in SETTLEMENT_FLAGS]
         if upload.id not in {item.id for item in list_uploads(session, case_id)}:
             save_upload(session, upload)
@@ -247,6 +252,9 @@ class ClaimAgent:
         facility = fields.get("facility_id")
         level = self._hie.lookup_facility(facility.value).level if facility else None
         flags = check(claim, Evidence(fields, result.retake_reasons, found, level), self._clock())
+        # The corrected page only speaks for the claim form; keep what other evidence raised.
+        kept = [f for f in claim.flags if f.code in OTHER_EVIDENCE_FLAGS]
+        flags += [f for f in kept if f.code not in {flag.code for flag in flags}]
         claim = claim.model_copy(update={"fields": list(fields.values()), "flags": flags})
         claim = claim.model_copy(update={"readiness": _readiness(claim)})
         save_claim(session, claim)
@@ -340,6 +348,7 @@ class ClaimAgent:
 
 
 SETTLEMENT_FLAGS = {"resubmission_deadline_near", "claim_rejected"}
+OTHER_EVIDENCE_FLAGS = {"retake_required", "voice_note_unclear"}
 
 
 class RescueError(Exception):
@@ -357,6 +366,24 @@ def signed_upload(data_dir: Path, case_id: str) -> Upload | None:
         filename="claim_form_signed.png",
         path=str(path),
     )
+
+
+def _corrected(claim) -> bool:
+    return any(
+        c.source_id.endswith("-claim_form_signed") for f in claim.fields for c in f.citations
+    )
+
+
+def _with_corrected_page(uploads: list[Upload], case_id: str) -> list[Upload]:
+    """Swap the original claim form for its corrected page."""
+    swapped = []
+    for upload in uploads:
+        if upload.filename == "claim_form.png":
+            page = signed_upload(Path(upload.path).parents[1], case_id)
+            swapped.append(page or upload)
+        else:
+            swapped.append(upload)
+    return swapped
 
 
 def _count(number: int, noun: str) -> str:

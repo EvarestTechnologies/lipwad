@@ -78,6 +78,7 @@ const SHORT_REASON: Record<string, string> = {
   admission_date_mismatch: "admission dates disagree",
   voice_note_unclear: "voice note could not be heard",
 };
+const DOCUMENTS: Record<string, string> = { claim_form_signed: "signed claim form" };
 const STATUS_WORD: Record<string, string> = { green: "Ready", amber: "Needs a fix", red: "Blocked" };
 
 /** Rewrites an activity step's internal codes and field names in plain words. */
@@ -88,7 +89,6 @@ export function plain(text: string): string {
     return `${STATUS_WORD[status[1]]}${reasons.length ? `: ${reasons.join(", ")}` : ""}`;
   }
   return text
-    .replace(/\b(claim_form_signed|claim_form|invoice)\b/g, (m) => ({ claim_form_signed: "signed claim form", claim_form: "claim form", invoice: "invoice" })[m]!)
-    .replace(/\b([a-z]+(?:_[a-z]+)+)\b/g, (m) => (LABELS[m] ?? SHORT_REASON[m] ?? m.replace(/_/g, " ")).toLowerCase())
+    .replace(/\b([a-z]+(?:_[a-z]+)+)\b/g, (m) => (LABELS[m] ?? SHORT_REASON[m] ?? DOCUMENTS[m] ?? m.replace(/_/g, " ")).toLowerCase())
     .replace(/ -> /g, " → ");
 }

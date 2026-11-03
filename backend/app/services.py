@@ -5,6 +5,7 @@ worker per claim at a time, and a demo that restores itself on a schedule.
 """
 
 import json
+import logging
 import os
 import shutil
 import sqlite3
@@ -26,6 +27,8 @@ from app.hie.mock import MockHIE
 from app.models import Role, create_client
 from app.models.transcribe import create_transcriber
 from app.tools.fixtures import load_fixtures
+
+log = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
@@ -69,7 +72,9 @@ class DemoReset:
     clock: Callable[[], datetime] = _now
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
-    def maybe(self) -> None:
+    def maybe(self, exclusive: Callable[[Callable[[], None]], bool] | None = None) -> None:
+        """Reset if due. `exclusive` runs the reset only when no claim work is in flight
+        and returns False otherwise, so the reset is retried on a later request."""
         with self._lock:
             now = self.clock()
             try:
@@ -78,8 +83,14 @@ class DemoReset:
                 last = None
             if last is not None and now - last < timedelta(hours=self.every_hours):
                 return
-            self.reset()
-            self.marker.write_text(now.isoformat())
+            try:
+                done = exclusive(self.reset) if exclusive else (self.reset() or True)
+            except Exception:
+                # A failed restore must not fail every request; try again next period.
+                log.exception("demo reset failed")
+                done = True
+            if done:
+                self.marker.write_text(now.isoformat())
 
 
 class DemoState:
@@ -153,19 +164,47 @@ class Services:
     demo: DemoState | None = None
     admin_key: str | None = None
     _locks: dict[str, threading.Lock] = field(default_factory=dict, repr=False)
-    _guard: threading.Lock = field(default_factory=threading.Lock, repr=False)
+    _state: threading.Condition = field(default_factory=threading.Condition, repr=False)
+    _active: int = 0
+    _restoring: bool = False
 
     @contextmanager
     def claim_lock(self, claim_id: str) -> Iterator[None]:
-        """Hold the claim for one request; a second request at the same time is refused."""
-        with self._guard:
+        """Hold the claim for one request; a second request at the same time is refused.
+
+        Claim work waits while the demo is being restored, and a restore waits for none.
+        """
+        with self._state:
+            while self._restoring:
+                self._state.wait()
             lock = self._locks.setdefault(claim_id, threading.Lock())
-        if not lock.acquire(blocking=False):
-            raise ClaimBusyError(f"Lipwad is already working on {claim_id}; try again shortly")
+            if not lock.acquire(blocking=False):
+                raise ClaimBusyError(f"Lipwad is already working on {claim_id}; try again shortly")
+            self._active += 1
         try:
             yield
         finally:
-            lock.release()
+            with self._state:
+                lock.release()
+                self._active -= 1
+                self._state.notify_all()
+
+    def maybe_reset(self) -> None:
+        if self.demo_reset is not None:
+            self.demo_reset.maybe(self._exclusive)
+
+    def _exclusive(self, action: Callable[[], None]) -> bool:
+        with self._state:
+            if self._active:
+                return False
+            self._restoring = True
+        try:
+            action()
+        finally:
+            with self._state:
+                self._restoring = False
+                self._state.notify_all()
+        return True
 
 
 def build_services() -> Services:
