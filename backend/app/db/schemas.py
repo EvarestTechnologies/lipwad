@@ -124,3 +124,14 @@ class Claim(BaseModel):
         if self.lifecycle not in (Lifecycle.RETURNED, Lifecycle.REJECTED):
             return None
         return self.returned_at + RESUBMISSION_WINDOW if self.returned_at else None
+
+
+class ActivityStep(BaseModel):
+    """One thing the agent did, shown in the Today feed."""
+
+    claim_id: str
+    at: AwareDatetime
+    kind: Literal["read", "check", "decide", "hie", "human"]
+    text: str
+    model: str | None = None
+    citations: list[Citation] = PydanticField(default_factory=list)
