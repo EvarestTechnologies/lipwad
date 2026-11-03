@@ -65,6 +65,11 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: none; box-
 .photo img { width: 100%; display: block; border-radius: var(--radius-sm); }
 .photo figcaption { font: var(--text-chip); margin-top: 8px; }
 .highlight { position: absolute; border: 3px solid var(--signal); background: var(--signal-tint); border-radius: 4px; }
+.voice { display: grid; gap: 12px; }
+.voice audio { width: 100%; }
+.voice button { justify-self: start; background: var(--signal-strong); }
+.voice blockquote { margin: 0; padding: 12px 16px; background: var(--navy-800); border-left: 3px solid var(--signal); border-radius: var(--radius-sm); color: var(--card); }
+.voice p { font: var(--text-chip); margin: 0; }
 .rule { background: var(--navy-800); padding: 12px 16px; border-radius: var(--radius-md); }
 .field { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; text-align: left; background: var(--card); color: var(--ink); border: 1px solid var(--border); padding: 10px 14px; min-height: var(--touch); }
 .field[aria-pressed="true"] { border-color: var(--signal-strong); box-shadow: var(--focus-ring); }
