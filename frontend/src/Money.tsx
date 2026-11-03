@@ -28,7 +28,7 @@ export function MoneyScreen() {
           return (
             <li key={stage.label}>
               <span className="who"><strong>{stage.label}</strong><span className="muted">{stage.note}</span></span>
-              <span className="mono">{items.length} claim{items.length === 1 ? "" : "s"}</span>
+              <span className="mono">{claims ? `${items.length} claim${items.length === 1 ? "" : "s"}` : "…"}</span>
               <span className="money">{!claims ? "…" : items.some((c) => c.amount_ksh !== null) ? ksh(total) : "—"}</span>
             </li>
           );

@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from app.agent.run import ClaimAgent, case_uploads
+from app.agent.run import ClaimAgent, case_uploads, signed_upload
 from app.db.repository import list_activity, load_claim
 from app.db.schemas import Readiness
 from app.db.seed import load_cases, mock_script, register_submissions, seed_claims
@@ -202,3 +202,36 @@ def test_unreadable_voice_note_blocks_green_with_a_re_record_request() -> None:
     codes = {flag.code for flag in claim.flags}
     assert "voice_note_unclear" in codes and "retake_required" not in codes
     assert claim.readiness == Readiness.AMBER
+
+
+def test_read_steps_count_values_in_plain_english() -> None:
+    _, activity, _ = run("F06")
+
+    assert any(step.text.startswith("Heard voice note: 1 cited value ") for step in activity)
+    assert not any("1 cited values" in step.text for step in activity)
+
+
+def test_a_corrected_page_keeps_flags_about_other_evidence() -> None:
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    hie = MockHIE(script=mock_script(list(CASES.values())))
+    fixtures = load_fixtures(DATA_DIR)
+    fixtures["vision:F06/claim_form_signed"] = fixtures["vision:F01/claim_form_signed"]
+    agent = ClaimAgent(
+        vision=StubProvider(Role.VISION, fixtures),
+        reasoning=FakeReasoning(),
+        hie=hie,
+        transcriber=Broken(),
+    )
+    with Session(engine) as session:
+        seed_claims(session, list(CASES.values()))
+        uploads = case_uploads(DATA_DIR, "F06")
+        agent.run(session, "F06", uploads)
+        page = signed_upload(DATA_DIR, "F01").model_copy(
+            update={"claim_id": "F06", "id": "F06-claim_form_signed"}
+        )
+        agent.rescue(session, "F06", page)
+        claim = load_claim(session, "F06")
+
+    assert "voice_note_unclear" in {flag.code for flag in claim.flags}
+    assert claim.readiness != Readiness.GREEN

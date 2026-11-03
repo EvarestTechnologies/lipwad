@@ -48,3 +48,47 @@ export function Link({ to, current, className, children }: { to: string; current
     </a>
   );
 }
+
+export const LABELS: Record<string, string> = {
+  patient_name: "Patient name",
+  patient_ref: "Patient number",
+  visit_type: "Visit type",
+  admission_date: "Admitted",
+  discharge_date: "Discharged",
+  diagnosis: "Diagnosis",
+  practitioner_name: "Clinician",
+  practitioner_id: "Practitioner number",
+  facility_id: "Facility",
+  clinician_signature: "Clinician signature",
+  invoice_total: "Invoice total",
+  invoice_itemised: "Itemised invoice",
+  service_code: "Service code",
+  voice_admission_date: "Admitted (voice note)",
+};
+
+const SHORT_REASON: Record<string, string> = {
+  signature_missing: "unsigned claim form",
+  itemised_invoice_missing: "invoice not itemised",
+  service_type_inconsistent: "service type does not match the documents",
+  practitioner_not_found: "practitioner not in the registry",
+  service_outside_facility_level: "service outside this facility's level",
+  retake_required: "photo too unclear to read",
+  resubmission_deadline_near: "resubmission window closing",
+  claim_rejected: "rejected by SHA",
+  admission_date_mismatch: "admission dates disagree",
+  voice_note_unclear: "voice note could not be heard",
+};
+const DOCUMENTS: Record<string, string> = { claim_form_signed: "signed claim form" };
+const STATUS_WORD: Record<string, string> = { green: "Ready", amber: "Needs a fix", red: "Blocked" };
+
+/** Rewrites an activity step's internal codes and field names in plain words. */
+export function plain(text: string): string {
+  const status = text.match(/^Status (green|amber|red); reasons: (.*)$/);
+  if (status) {
+    const reasons = status[2] === "none" ? [] : status[2].split(", ").map((code) => SHORT_REASON[code] ?? code);
+    return `${STATUS_WORD[status[1]]}${reasons.length ? `: ${reasons.join(", ")}` : ""}`;
+  }
+  return text
+    .replace(/\b([a-z]+(?:_[a-z]+)+)\b/g, (m) => (LABELS[m] ?? SHORT_REASON[m] ?? DOCUMENTS[m] ?? m.replace(/_/g, " ")).toLowerCase())
+    .replace(/ -> /g, " → ");
+}
