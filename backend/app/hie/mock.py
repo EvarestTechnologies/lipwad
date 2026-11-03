@@ -58,8 +58,13 @@ class MockHIE:
         self._clock = clock
         self._claims: dict[str, ClaimResponse] = {}
         self._edits: dict[str, list[ClaimPatch]] = {}
-        if state_path and state_path.exists():
-            stored = json.loads(state_path.read_text())
+        self.reload()
+
+    def reload(self) -> None:
+        """Re-read the state file, after the demo is restored or reseeded."""
+        self._claims, self._edits = {}, {}
+        if self._state_path and self._state_path.exists():
+            stored = json.loads(self._state_path.read_text())
             self._claims = {
                 key: ClaimResponse.model_validate(value) for key, value in stored["claims"].items()
             }
@@ -122,6 +127,14 @@ class MockHIE:
         self._claims[hie_id] = response
         self._persist()
         return response
+
+    def shift(self, offset: timedelta) -> None:
+        """Move every outcome time by `offset`, keeping claims at the same point in their window."""
+        self._claims = {
+            key: value.model_copy(update={"outcome_at": value.outcome_at + offset})
+            for key, value in self._claims.items()
+        }
+        self._persist()
 
     def _persist(self) -> None:
         if self._state_path is None:

@@ -202,3 +202,10 @@ def test_unreadable_voice_note_blocks_green_with_a_re_record_request() -> None:
     codes = {flag.code for flag in claim.flags}
     assert "voice_note_unclear" in codes and "retake_required" not in codes
     assert claim.readiness == Readiness.AMBER
+
+
+def test_read_steps_count_values_in_plain_english() -> None:
+    _, activity, _ = run("F06")
+
+    assert any(step.text.startswith("Heard voice note: 1 cited value ") for step in activity)
+    assert not any("1 cited values" in step.text for step in activity)

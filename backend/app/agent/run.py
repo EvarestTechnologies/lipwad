@@ -88,7 +88,7 @@ class ClaimAgent:
         if any(
             c.source_id.endswith("-claim_form_signed") for f in claim.fields for c in f.citations
         ):
-            raise RescueError(f"{case_id} has a drafted rescue; resubmit it instead")
+            raise RescueError(f"{case_id} already has its corrected page; submit it instead")
         known = {upload.id for upload in list_uploads(session, case_id)}
         fields: dict[str, Field] = {}
         retake: list[str] = []
@@ -109,7 +109,7 @@ class ClaimAgent:
                 session,
                 case_id,
                 "read",
-                f"Read {kind}: {len(result.fields)} cited values"
+                f"Read {kind}: {_count(len(result.fields), 'cited value')}"
                 + (
                     f"; retake needed ({'; '.join(result.retake_reasons)})"
                     if result.retake_reasons
@@ -184,7 +184,7 @@ class ClaimAgent:
             session,
             case_id,
             "read",
-            f"Heard voice note: {len(result.fields)} cited values"
+            f"Heard voice note: {_count(len(result.fields), 'cited value')}"
             + (f" ({heard})" if heard else "")
             + (f"; {'; '.join(result.retake_reasons)}" if result.retake_reasons else ""),
             result.model,
@@ -224,8 +224,8 @@ class ClaimAgent:
     def rescue(self, session: Session, case_id: str, upload: Upload) -> dict:
         """Re-read a corrected page and redo the checks. Only evidence changes the claim."""
         claim = load_claim(session, case_id)
-        if claim.lifecycle not in (Lifecycle.RETURNED, Lifecycle.REJECTED):
-            raise RescueError(f"{case_id} is {claim.lifecycle.value}, not returned or rejected")
+        if claim.lifecycle not in (Lifecycle.DRAFT, Lifecycle.RETURNED, Lifecycle.REJECTED):
+            raise RescueError(f"{case_id} is already with SHA")
         reasons = [flag.code for flag in claim.flags if flag.code not in SETTLEMENT_FLAGS]
         if upload.id not in {item.id for item in list_uploads(session, case_id)}:
             save_upload(session, upload)
@@ -271,6 +271,8 @@ class ClaimAgent:
 
     def resubmit(self, session: Session, case_id: str, confirmation: Confirmation) -> None:
         claim = load_claim(session, case_id)
+        if claim.lifecycle not in (Lifecycle.RETURNED, Lifecycle.REJECTED):
+            raise RescueError(f"{case_id} has not been returned by SHA; submit it instead")
         signed = f"{case_id}-claim_form_signed"
         corrections = [
             field
@@ -355,6 +357,10 @@ def signed_upload(data_dir: Path, case_id: str) -> Upload | None:
         filename="claim_form_signed.png",
         path=str(path),
     )
+
+
+def _count(number: int, noun: str) -> str:
+    return f"{number} {noun}{'' if number == 1 else 's'}"
 
 
 def _readiness(claim) -> Readiness:

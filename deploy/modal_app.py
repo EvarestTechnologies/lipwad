@@ -26,6 +26,8 @@ image = (
             "HIE_MODE": "mock",
             "STATIC_DIR": "/root/frontend/dist",
             "LIPWAD_SERVE_API": "1",
+            "LIPWAD_DAILY_RUNS": "30",
+            "LIPWAD_DEMO_RESET_HOURS": "6",
         }
     )
     .add_local_dir("backend/app", "/root/backend/app")

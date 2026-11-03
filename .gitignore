@@ -224,3 +224,6 @@ frontend/dev-dist/
 *.db
 uploads/
 hie_state.json
+baseline/
+usage.json
+demo_reset_at
