@@ -14,8 +14,22 @@ RULE_VERSION = "v[PLACEHOLDER]"
 DEADLINE_WARNING = timedelta(hours=48)
 MIN_INPATIENT_LEVEL = 3
 
+# What each check looks at, in Lipwad's own words. This is not SHA rule text; the
+# source documents are not yet registered in docs/SOURCES.md.
+RULES = {
+    "SHA-DOC-SIGNATURE": "The claim form carries the clinician's signature.",
+    "SHA-DOC-INVOICE": "The invoice lists each service with its own price.",
+    "SHA-SERVICE-TYPE": "Billed services match the visit type on the claim form.",
+    "SHA-PRACTITIONER-REGISTRY": "The practitioner number is in the practitioner registry.",
+    "SHA-FACILITY-LEVEL": "Inpatient care is billed only at a facility level that offers it.",
+    "SHA-RESUBMISSION": "A returned or rejected claim is resubmitted within 14 days.",
+    "TERM-PLACEHOLDER": "Each service carries a code from the SHA terminology.",
+}
+
 
 def rule(rule_id: str) -> Citation:
+    if rule_id not in RULES:
+        raise KeyError(f"{rule_id} is not in the rules catalogue")
     return Citation(kind="rule", source_id=rule_id, rule_version=RULE_VERSION)
 
 

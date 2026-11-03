@@ -28,12 +28,13 @@ from app.tools.intake import DocumentInput, extract_document
 DOCUMENTS = ("claim_form", "invoice")
 
 EXPLAIN_PROMPT = (
-    "You explain a hospital insurance claim review to a claims clerk. You never give "
-    "clinical advice and never suggest adding or upgrading services. Given the extracted "
-    "fields and the findings, return JSON only: "
-    '{"summary": one sentence on what was checked, '
-    '"explanation_en": what the clerk must do next in plain English, '
-    '"explanation_sw": the same in Kiswahili}.'
+    "You write for a hospital claims clerk in Kenya who prepares claims for SHA. Given "
+    "the extracted fields, the status and the findings, tell the clerk what to do next "
+    "to get this claim paid. At most two short sentences, plain words, no field names "
+    "in snake_case. You never give clinical advice, never suggest adding or upgrading "
+    "services, and never tell the clerk to approve or pay a claim: SHA does that. "
+    'Return JSON only: {"explanation_en": English text, "explanation_sw": the same in '
+    "Kiswahili}."
 )
 
 
@@ -158,7 +159,7 @@ class ClaimAgent:
         try:
             response = self._reasoning.complete(request)
             body = json.loads(response.content)
-            text = f"{body['summary']} {body['explanation_en']} | SW: {body['explanation_sw']}"
+            text = f"{body['explanation_en']} | SW: {body['explanation_sw']}"
             self._log(session, claim.id, "decide", text, response.model_id, [])
         except (
             ModelAPIError,

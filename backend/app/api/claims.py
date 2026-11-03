@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import AwareDatetime, BaseModel
 
+from app.agent.rules import RULE_VERSION, RULES
 from app.agent.run import RescueError, case_uploads, signed_upload
 from app.db.repository import list_activity, list_uploads, load_claim
 from app.db.schemas import Lifecycle, NonBlank, Readiness
@@ -107,6 +108,13 @@ def router(services: Services) -> APIRouter:
                 raise HTTPException(status_code=404)
             return FileResponse(row.path, media_type="image/png")
 
+    @api.get("/rules")
+    def rules() -> list[dict]:
+        return [
+            {"id": rule_id, "checks": checks, "version": RULE_VERSION, "source_registered": False}
+            for rule_id, checks in RULES.items()
+        ]
+
     @api.get("/today")
     def today() -> dict:
         with services.sessions() as session:
@@ -118,7 +126,7 @@ def router(services: Services) -> APIRouter:
                 "tasks": sorted(tasks, key=lambda item: item["deadline"] or "9999"),
                 "activity": [
                     step.model_dump(mode="json")
-                    for step in reversed(list_activity(session, latest=30))
+                    for step in reversed(list_activity(session, latest=10))
                 ],
             }
 
