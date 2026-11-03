@@ -65,6 +65,7 @@ class ExtractionResult(BaseModel):
     kind: Literal["claim_form", "invoice"]
     fields: list[Field]
     retake_reasons: list[str]
+    model: str
 
 
 def extract_document(document: DocumentInput, client: ModelClient) -> ExtractionResult:
@@ -83,21 +84,35 @@ def extract_document(document: DocumentInput, client: ModelClient) -> Extraction
             )
         ],
     )
-    data = _parse(client.complete(request).content)
-    if document.kind == "claim_form":
-        return _claim_form(document, data)
-    return _invoice(document, data)
+    response = client.complete(request)
+    try:
+        data = _parse(response.content)
+        result = (
+            _claim_form(document, data)
+            if document.kind == "claim_form"
+            else _invoice(document, data)
+        )
+    except (ValueError, TypeError, AttributeError):
+        result = ExtractionResult(
+            upload_id=document.upload.id,
+            kind=document.kind,
+            fields=[],
+            retake_reasons=[f"{document.kind} could not be read"],
+            model="",
+        )
+    return result.model_copy(update={"model": response.model_id})
 
 
 def _claim_form(document: DocumentInput, data: dict[str, Any]) -> ExtractionResult:
     upload_id = document.upload.id
     fields, retake = [], [f"{name} is unreadable" for name in data.get("unreadable", [])]
     for item in data.get("fields", []):
-        name, value = item.get("name"), str(item.get("value", "")).strip()
-        if name not in CLAIM_FORM_FIELDS or not value:
+        name, raw = item.get("name"), item.get("value")
+        if name not in CLAIM_FORM_FIELDS:
             continue
-        confidence = float(item.get("confidence", 0))
-        if confidence < MIN_CONFIDENCE:
+        value = str(raw).strip() if raw is not None else ""
+        confidence = float(item.get("confidence") or 0)
+        if not value or confidence < MIN_CONFIDENCE:
             retake.append(f"{name} is unclear")
             continue
         fields.append(
@@ -119,7 +134,7 @@ def _claim_form(document: DocumentInput, data: dict[str, Any]) -> ExtractionResu
         )
     )
     return ExtractionResult(
-        upload_id=upload_id, kind="claim_form", fields=fields, retake_reasons=retake
+        upload_id=upload_id, kind="claim_form", fields=fields, retake_reasons=retake, model=""
     )
 
 
@@ -128,7 +143,7 @@ def _invoice(document: DocumentInput, data: dict[str, Any]) -> ExtractionResult:
     fields = [
         _field(
             f"invoice_line_{number}",
-            f"{line.get('description', '').strip()}: KSh {int(line.get('amount', 0))}",
+            f"{(line.get('description') or '').strip()}: KSh {_amount(line.get('amount'))}",
             1.0,
             upload_id,
             line.get("bbox"),
@@ -140,7 +155,12 @@ def _invoice(document: DocumentInput, data: dict[str, Any]) -> ExtractionResult:
     if "amount" in total:
         fields.append(
             _field(
-                "invoice_total", str(int(total["amount"])), 1.0, upload_id, total.get("bbox"), None
+                "invoice_total",
+                str(_amount(total["amount"])),
+                1.0,
+                upload_id,
+                total.get("bbox"),
+                None,
             )
         )
     lines = data.get("lines", [])
@@ -156,8 +176,12 @@ def _invoice(document: DocumentInput, data: dict[str, Any]) -> ExtractionResult:
     )
     retake = [f"{item} is unreadable" for item in data.get("unreadable", [])]
     return ExtractionResult(
-        upload_id=upload_id, kind="invoice", fields=fields, retake_reasons=retake
+        upload_id=upload_id, kind="invoice", fields=fields, retake_reasons=retake, model=""
     )
+
+
+def _amount(value: Any) -> int:
+    return int(str(value).replace(",", "").replace("KSh", "").strip())
 
 
 def _field(
@@ -181,4 +205,7 @@ def _region(bbox: list[float] | None) -> list[list[float]]:
 
 def _parse(content: str) -> dict[str, Any]:
     text = content.strip().removeprefix("```json").removeprefix("```").removesuffix("```")
-    return json.loads(text)
+    data = json.loads(text)
+    if not isinstance(data, dict):
+        raise ValueError("expected a JSON object")
+    return data

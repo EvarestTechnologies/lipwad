@@ -93,21 +93,30 @@ def add_activity(session: Session, step: ActivityStep) -> None:
     session.flush()
 
 
-def list_activity(session: Session, claim_id: str | None = None) -> list[ActivityStep]:
-    query = select(ActivityRow).order_by(ActivityRow.at, ActivityRow.id)
+def list_activity(
+    session: Session, claim_id: str | None = None, latest: int | None = None
+) -> list[ActivityStep]:
+    """Activity in time order; with `latest`, only that many of the most recent steps."""
+    query = select(ActivityRow).order_by(ActivityRow.at.desc(), ActivityRow.id.desc())
     if claim_id is not None:
         query = query.where(ActivityRow.claim_id == claim_id)
-    return [
-        ActivityStep(
-            claim_id=row.claim_id,
-            at=row.at.replace(tzinfo=UTC),
-            kind=row.kind,
-            text=row.text,
-            model=row.model,
-            citations=row.citations,
+    if latest is not None:
+        query = query.limit(latest)
+    return list(
+        reversed(
+            [
+                ActivityStep(
+                    claim_id=row.claim_id,
+                    at=row.at.replace(tzinfo=UTC),
+                    kind=row.kind,
+                    text=row.text,
+                    model=row.model,
+                    citations=row.citations,
+                )
+                for row in session.scalars(query)
+            ]
         )
-        for row in session.scalars(query)
-    ]
+    )
 
 
 def list_uploads(session: Session, claim_id: str) -> list[Upload]:

@@ -4,6 +4,7 @@ Rule IDs are placeholders until docs/SOURCES.md registers the SHA documents they
 from; each finding cites both the evidence and the placeholder rule version.
 """
 
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -55,7 +56,7 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
     bed_lines = [
         name
         for name, item in fields.items()
-        if name.startswith("invoice_line") and "bed" in item.value.lower()
+        if name.startswith("invoice_line") and re.search(r"\bbed[ -]?days?\b", item.value, re.I)
     ]
     visit = fields.get("visit_type")
     same_day = (
@@ -63,7 +64,8 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
         and fields.get("discharge_date")
         and (fields["admission_date"].value == fields["discharge_date"].value)
     )
-    if bed_lines and ((visit and "out" in visit.value.lower()) or same_day):
+    outpatient = bool(visit and re.search(r"\bout-?patient\b", visit.value, re.I))
+    if bed_lines and (outpatient or same_day):
         flags.append(
             Flag(
                 code="service_type_inconsistent",
@@ -79,7 +81,7 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
                 citations=[*cite("practitioner_id"), rule("SHA-PRACTITIONER-REGISTRY")],
             )
         )
-    inpatient = visit and "in" in visit.value.lower() and "out" not in visit.value.lower()
+    inpatient = bool(visit and re.search(r"\bin-?patient\b", visit.value, re.I))
     if (
         inpatient
         and evidence.facility_level is not None

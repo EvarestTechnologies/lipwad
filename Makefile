@@ -1,7 +1,7 @@
 .PHONY: dev test seed lint deploy smoke review-all
 
 dev:
-	(cd backend && set -a && . ../.env && set +a && LIPWAD_SERVE_API=1 uv run uvicorn app.main:app --reload --port 8000) & \
+	(cd backend && set -a && { [ -f ../.env ] && . ../.env; true; } && set +a && LIPWAD_SERVE_API=1 uv run uvicorn app.main:app --reload --port 8000) & \
 	(cd frontend && npm run dev) & \
 	wait
 

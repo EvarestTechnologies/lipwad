@@ -66,6 +66,12 @@ class ClaimAgent:
 
     def run(self, session: Session, case_id: str, uploads: list[Upload]) -> None:
         claim = load_claim(session, case_id)
+        if claim.lifecycle in (Lifecycle.SUBMITTED, Lifecycle.PAID):
+            raise RescueError(f"{case_id} is already with SHA")
+        if any(
+            c.source_id.endswith("-claim_form_signed") for f in claim.fields for c in f.citations
+        ):
+            raise RescueError(f"{case_id} has a drafted rescue; resubmit it instead")
         known = {upload.id for upload in list_uploads(session, case_id)}
         fields: dict[str, Field] = {}
         retake: list[str] = []
@@ -88,7 +94,7 @@ class ClaimAgent:
                     if result.retake_reasons
                     else ""
                 ),
-                "muse-spark-1.3",
+                result.model,
                 [c for field in result.fields[:3] for c in field.citations],
             )
 
@@ -154,7 +160,14 @@ class ClaimAgent:
             body = json.loads(response.content)
             text = f"{body['summary']} {body['explanation_en']} | SW: {body['explanation_sw']}"
             self._log(session, claim.id, "decide", text, response.model_id, [])
-        except (ModelAPIError, StubFixtureMissingError, ValueError, KeyError) as error:
+        except (
+            ModelAPIError,
+            StubFixtureMissingError,
+            ValueError,
+            KeyError,
+            TypeError,
+            AttributeError,
+        ) as error:
             self._log(session, claim.id, "decide", f"Explanation unavailable: {error}", None, [])
 
     def rescue(self, session: Session, case_id: str, upload: Upload) -> dict:
@@ -177,7 +190,7 @@ class ClaimAgent:
                 changes.append(
                     {"field": field.name, "before": before.get(field.name), "after": field.value}
                 )
-            fields[field.name] = field
+                fields[field.name] = field
         practitioner = fields.get("practitioner_id")
         found = self._hie.lookup_practitioner(practitioner.value).found if practitioner else None
         facility = fields.get("facility_id")
@@ -195,7 +208,7 @@ class ClaimAgent:
             case_id,
             "check",
             f"Rescue drafted from the corrected page: {summary}",
-            "muse-spark-1.3",
+            result.model,
             [
                 c
                 for field in result.fields
@@ -220,6 +233,9 @@ class ClaimAgent:
         claim = claim.model_copy(
             update={
                 "lifecycle": response.lifecycle,
+                "returned_at": response.outcome_at
+                if response.lifecycle in (Lifecycle.RETURNED, Lifecycle.REJECTED)
+                else claim.returned_at,
                 "flags": [flag for flag in claim.flags if flag.code not in SETTLEMENT_FLAGS]
                 if response.lifecycle is Lifecycle.SUBMITTED
                 else claim.flags,

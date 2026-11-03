@@ -56,7 +56,10 @@ def router(services: Services) -> APIRouter:
         with services.sessions() as session:
             detail(session, claim_id)
             uploads = case_uploads(services.data_dir, claim_id)
-            services.agent.run(session, claim_id, uploads)
+            try:
+                services.agent.run(session, claim_id, uploads)
+            except RescueError as error:
+                raise HTTPException(status_code=409, detail=str(error)) from error
             session.commit()
             return detail(session, claim_id)
 
@@ -114,8 +117,9 @@ def router(services: Services) -> APIRouter:
                 "at_risk_ksh": sum(item["amount_ksh"] or 0 for item in tasks),
                 "tasks": sorted(tasks, key=lambda item: item["deadline"] or "9999"),
                 "activity": [
-                    step.model_dump(mode="json") for step in reversed(list_activity(session))
-                ][:30],
+                    step.model_dump(mode="json")
+                    for step in reversed(list_activity(session, latest=30))
+                ],
             }
 
     return api

@@ -110,7 +110,7 @@ export function Review({ claimId }: { claimId: string }) {
             <figure className="photo">
               <img src={`/api/uploads/${selected.citation.source_id}/image`} alt={`Document for ${selected.label}`} />
               {selected.citation.region && <Highlight region={selected.citation.region} />}
-              <figcaption className="mono">{selected.citation.source_id} · read by Muse Spark 1.3</figcaption>
+              <figcaption className="mono">Source: {selected.citation.source_id}</figcaption>
             </figure>
           ) : (
             <p className="muted">Tap a field to see exactly where it came from.</p>

@@ -66,3 +66,52 @@ def test_blurred_form_requests_a_retake_instead_of_guessing() -> None:
 @pytest.mark.parametrize("case_id", ["C01", "F01", "F02", "F03", "F04", "F05"])
 def test_demo_cases_extract_practitioner(case_id: str) -> None:
     assert values(extract(case_id, "claim_form"))["practitioner_id"].startswith("PR-")
+
+
+class Canned:
+    def __init__(self, content: str) -> None:
+        self.content = content
+
+    def complete(self, request):
+        from app.models import ChatResponse
+
+        return ChatResponse(content=self.content, model_id="canned", provider="canned")
+
+
+def canned(kind: str, content: str):
+    upload = Upload(
+        id="X-doc",
+        claim_id="X",
+        kind="image",
+        filename=f"{kind}.png",
+        path=str(DATA_DIR / "C01" / f"{kind}.png"),
+    )
+    return extract_document(DocumentInput(upload=upload, case_id="X", kind=kind), Canned(content))
+
+
+def test_null_value_is_a_retake_not_the_text_none() -> None:
+    result = canned(
+        "claim_form",
+        '{"fields":[{"name":"practitioner_id","value":null,"confidence":null}],'
+        '"signature_present":true,"unreadable":[]}',
+    )
+
+    assert "practitioner_id" not in values(result)
+    assert any("practitioner_id" in reason for reason in result.retake_reasons)
+
+
+def test_malformed_output_becomes_a_retake_request() -> None:
+    result = canned("claim_form", "I could not read this page.")
+
+    assert result.fields == []
+    assert result.retake_reasons
+
+
+def test_invoice_amount_with_separators_is_read() -> None:
+    result = canned(
+        "invoice",
+        '{"lines":[{"description":"Consultation","amount":"1,500"},'
+        '{"description":null,"amount":700}],"total":{"amount":"2,200"},"itemised":true}',
+    )
+
+    assert values(result)["invoice_total"] == "2200"

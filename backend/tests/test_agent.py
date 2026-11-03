@@ -95,3 +95,48 @@ def test_activity_records_each_agent_step() -> None:
     text = " ".join(step.text for step in activity)
 
     assert "claim_form" in text and "registry" in text.lower()
+
+
+def test_rescued_claim_cannot_be_rerun_and_lose_its_fix() -> None:
+    from app.agent.run import RescueError, signed_upload
+
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    hie = MockHIE(script=mock_script(list(CASES.values())))
+    register_submissions(hie, list(CASES.values()))
+    agent = ClaimAgent(StubProvider(Role.VISION, load_fixtures(DATA_DIR)), FakeReasoning(), hie)
+    with Session(engine) as session:
+        seed_claims(session, list(CASES.values()))
+        agent.run(session, "F05", case_uploads(DATA_DIR, "F05"))
+        agent.rescue(session, "F05", signed_upload(DATA_DIR, "F05"))
+        with pytest.raises(RescueError):
+            agent.run(session, "F05", case_uploads(DATA_DIR, "F05"))
+
+
+def test_rescue_only_replaces_fields_that_changed() -> None:
+    from app.agent.run import signed_upload
+
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    hie = MockHIE(script=mock_script(list(CASES.values())))
+    register_submissions(hie, list(CASES.values()))
+    agent = ClaimAgent(StubProvider(Role.VISION, load_fixtures(DATA_DIR)), FakeReasoning(), hie)
+    with Session(engine) as session:
+        seed_claims(session, list(CASES.values()))
+        agent.run(session, "F05", case_uploads(DATA_DIR, "F05"))
+        agent.rescue(session, "F05", signed_upload(DATA_DIR, "F05"))
+        claim = load_claim(session, "F05")
+
+    signed = [
+        field.name
+        for field in claim.fields
+        if any(c.source_id == "F05-claim_form_signed" for c in field.citations)
+    ]
+    assert signed == ["clinician_signature"]
+
+
+def test_activity_names_the_model_that_did_the_work() -> None:
+    _, activity, _ = run("C01")
+
+    assert all(step.model != "muse-spark-1.3" for step in activity if step.kind == "read")
+    assert any(step.model == "stub" for step in activity if step.kind == "read")
