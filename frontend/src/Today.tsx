@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api, headline, ksh, patientName, timeLeft, type Summary, type Today } from "./api";
 import { navigate } from "./router";
-import { NO_ADVICE, REASON_TEXT, StatusPill } from "./ui";
+import { NO_ADVICE, plain, REASON_TEXT, StatusPill } from "./ui";
 
 export function TodayScreen() {
   const [today, setToday] = useState<Today | null>(null);
@@ -65,7 +65,7 @@ export function TodayScreen() {
               <strong>{patientName(task.patient_name, true)}</strong>
               <p>{REASON_TEXT[task.reasons[0]] ?? task.reasons[0]}</p>
               {task.deadline && <p className="deadline">{timeLeft(task.deadline)}</p>}
-              <button onClick={() => navigate(`/claims/${task.id}`)}>{task.rescue ? "Open rescue" : task.actions[0]}</button>
+              <button onClick={() => navigate(`/claims/${task.id}`)}>{task.rescue ? "Open rescue" : "Fix this claim"}</button>
             </li>
           ))}
         </ul>
@@ -111,7 +111,7 @@ export function TodayScreen() {
             <li key={index}>
               <time className="mono">{new Date(step.at).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}</time>
               <span className="mono chip">{step.claim_id}</span>
-              <span>{headline(step.text)}</span>
+              <span>{plain(headline(step.text))}</span>
               {step.model && <span className="chip model">{step.model}</span>}
             </li>
           ))}

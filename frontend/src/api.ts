@@ -22,7 +22,7 @@ export type Claim = {
 };
 export type Step = { claim_id: string; at: string; kind: string; text: string; model: string | null };
 export type Upload = { id: string; filename: string };
-export type ClaimDetail = { claim: Claim; uploads: Upload[]; activity: Step[] };
+export type ClaimDetail = { claim: Claim; uploads: Upload[]; activity: Step[]; has_corrected_page: boolean };
 export type Summary = {
   id: string;
   claim_id?: string;

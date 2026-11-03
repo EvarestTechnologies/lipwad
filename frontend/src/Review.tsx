@@ -1,24 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, clock, display, explanation, patientName, timeLeft, type Citation, type ClaimDetail, type Draft, type Field } from "./api";
-import { Link, NO_ADVICE, REASON_TEXT, StatusPill } from "./ui";
+import { LABELS, Link, NO_ADVICE, plain, REASON_TEXT, StatusPill } from "./ui";
 
-const LABELS: Record<string, string> = {
-  patient_name: "Patient name",
-  patient_ref: "Patient number",
-  visit_type: "Visit type",
-  admission_date: "Admitted",
-  discharge_date: "Discharged",
-  diagnosis: "Diagnosis",
-  practitioner_name: "Clinician",
-  practitioner_id: "Practitioner number",
-  facility_id: "Facility",
-  clinician_signature: "Clinician signature",
-  invoice_total: "Invoice total",
-  invoice_itemised: "Itemised invoice",
-  service_code: "Service code",
-  voice_admission_date: "Admitted (voice note)",
-};
 
 type Selected = { label: string; value: string; citation: Citation };
 
@@ -60,6 +44,9 @@ export function Review({ claimId }: { claimId: string }) {
   if (!detail) return <p className="muted">{error ?? "Loading…"}</p>;
   const { claim } = detail;
   const rescue = claim.lifecycle === "returned" || claim.lifecycle === "rejected";
+  const withSha = claim.lifecycle === "submitted" || claim.lifecycle === "paid";
+  const corrected = claim.fields.some((f) => f.citations.some((c) => c.source_id.endsWith("-claim_form_signed")));
+  const canFix = !withSha && !corrected && detail.has_corrected_page && (rescue || claim.readiness !== null);
   const canSubmit = claim.readiness === "green" && claim.lifecycle === "draft";
   const patient = patientName(claim.fields.find((f) => f.name === "patient_name")?.value ?? null, claim.readiness !== null);
   const fields = [...claim.fields, ...claim.coded_lines].filter((f) => !f.name.startsWith("invoice_line"));
@@ -78,9 +65,11 @@ export function Review({ claimId }: { claimId: string }) {
           <StatusPill readiness={claim.readiness} lifecycle={claim.lifecycle} />
           {claim.resubmission_deadline && <span className="deadline"> {timeLeft(claim.resubmission_deadline)}</span>}
         </div>
-        <button className="secondary" disabled={busy !== null} onClick={() => act("run", () => api.run(claim.id))}>
-          {busy === "run" ? "Lipwad is reading…" : claim.readiness ? "Review again" : "Review with Lipwad"}
-        </button>
+        {!withSha && !corrected && (
+          <button className="secondary" disabled={busy !== null} onClick={() => act("run", () => api.run(claim.id))}>
+            {busy === "run" ? "Lipwad is reading…" : claim.readiness ? "Review again" : "Review with Lipwad"}
+          </button>
+        )}
       </header>
       {error && <p className="error" role="alert">{error}</p>}
 
@@ -141,21 +130,27 @@ export function Review({ claimId }: { claimId: string }) {
         </section>
       </div>
 
-      {rescue && (
-        <section className="rescue" aria-label="Rescue">
-          <h2>Rescue</h2>
-          {!draft ? (
+      {(canFix || draft || (rescue && !corrected)) && (
+        <section className="rescue" aria-label={rescue ? "Rescue" : "Fix"}>
+          <h2>{rescue ? "Rescue" : "Fix"}</h2>
+          {!draft && canFix ? (
             <button disabled={busy !== null} onClick={() => act("rescue", async () => setDraft(await api.rescue(claim.id)))}>
               {busy === "rescue" ? "Reading the signed page…" : "Read the signed page"}
             </button>
+          ) : !draft ? (
+            <p className="muted">No corrected page has been added for this claim yet.</p>
           ) : (
             <>
-              <p>SHA's reason: {draft.reason.map((r) => REASON_TEXT[r] ?? r).join(" ")}</p>
+              <p>{rescue ? "SHA's reason" : "What needed fixing"}: {draft.reason.map((r) => REASON_TEXT[r] ?? r).join(" ")}</p>
               <table>
                 <thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
                 <tbody>
                   {draft.changes.map((c) => (
-                    <tr key={c.field}><td>{LABELS[c.field] ?? c.field}</td><td>{c.before ? display(c.field, c.before) : "—"}</td><td>{display(c.field, c.after)}</td></tr>
+                    <tr key={c.field}><td>{LABELS[c.field] ?? c.field}</td><td>{c.before ? display(c.field, c.before) : "—"}</td><td>
+                        <button className="chip" onClick={() => { const f = claim.fields.find((x) => x.name === c.field); if (f) select(f); }}>
+                          {display(c.field, c.after)} · see source
+                        </button>
+                      </td></tr>
                   ))}
                 </tbody>
               </table>
@@ -164,7 +159,7 @@ export function Review({ claimId }: { claimId: string }) {
         </section>
       )}
 
-      {(canSubmit || (rescue && draft)) && (
+      {(canSubmit || (rescue && corrected)) && (
         <section className="confirm" aria-label="Confirm">
           <label>Your name <input value={name} onChange={(e) => setName(e.target.value)} /></label>
           <label className="check">
@@ -228,9 +223,10 @@ function VoiceClip({ citation }: { citation: Citation }) {
 
 function Explained({ text }: { text: string }) {
   const { en, sw } = explanation(text);
+  const shown = plain(en);
   return (
     <span className="explained">
-      <span>{en}</span>
+      <span>{shown}</span>
       {sw && <span lang="sw" className="muted">{sw}</span>}
     </span>
   );
