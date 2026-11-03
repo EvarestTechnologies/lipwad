@@ -21,6 +21,8 @@ ACTIONS = {
     "claim_rejected": "Review the rejection and resubmit",
 }
 
+TODAY_FEED = 8
+
 
 class ConfirmBody(BaseModel):
     confirmed_by: NonBlank
@@ -126,7 +128,7 @@ def router(services: Services) -> APIRouter:
                 "tasks": sorted(tasks, key=lambda item: item["deadline"] or "9999"),
                 "activity": [
                     step.model_dump(mode="json")
-                    for step in reversed(list_activity(session, latest=10))
+                    for step in reversed(list_activity(session, latest=TODAY_FEED))
                 ],
             }
 

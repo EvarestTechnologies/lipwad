@@ -97,12 +97,8 @@ export function explanation(text: string): { en: string; sw: string | null } {
   return { en, sw: sw ?? null };
 }
 
-/** The first sentence of a feed step, for the short feed on Today. */
-export function headline(text: string): string {
-  const { en } = explanation(text);
-  const match = en.match(/^.*?[.!?](\s|$)/);
-  return (match ? match[0] : en).trim();
-}
+/** The English part of a feed step, for the short feed on Today. */
+export const headline = (text: string) => explanation(text).en;
 
 export const patientName = (name: string | null, reviewed: boolean) =>
   name?.replace(" [demo]", "") ?? (reviewed ? "Name unreadable" : "Not read yet");

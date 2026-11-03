@@ -11,9 +11,9 @@ export function RulesScreen() {
     <div>
       <h1>SHA rules</h1>
       <p className="muted">
-        The checks Lipwad runs on every claim, each cited by ID and version on the flags it raises.
-        The wording below is Lipwad's own description. The SHA source documents are not registered yet,
-        so versions show as placeholders and no SHA rule text is quoted.
+        The checks Lipwad runs on every claim. Each flag cites one of these rule IDs with its version.
+        The SHA source documents are not registered yet, so the IDs and versions are placeholders, the
+        descriptions say what Lipwad checks, and no SHA rule text is quoted.
       </p>
       {error && <p className="error" role="alert">{error}</p>}
       <ul className="rows">

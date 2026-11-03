@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { api, display, explanation, timeLeft, type Citation, type ClaimDetail, type Draft, type Field } from "./api";
-import { navigate } from "./App";
-import { NO_ADVICE, REASON_TEXT, StatusPill } from "./ui";
+import { api, display, explanation, patientName, timeLeft, type Citation, type ClaimDetail, type Draft, type Field } from "./api";
+import { Link, NO_ADVICE, REASON_TEXT, StatusPill } from "./ui";
 
 const LABELS: Record<string, string> = {
   patient_name: "Patient name",
@@ -48,6 +47,7 @@ export function Review({ claimId }: { claimId: string }) {
     try {
       await action();
       setConfirmed(false);
+      setSelected(null);
       await load();
     } catch (e) {
       setError((e as Error).message);
@@ -60,8 +60,7 @@ export function Review({ claimId }: { claimId: string }) {
   const { claim } = detail;
   const rescue = claim.lifecycle === "returned" || claim.lifecycle === "rejected";
   const canSubmit = claim.readiness === "green" && claim.lifecycle === "draft";
-  const patient = claim.fields.find((f) => f.name === "patient_name")?.value.replace(" [demo]", "")
-    ?? (claim.readiness ? "Name unreadable" : undefined);
+  const patient = patientName(claim.fields.find((f) => f.name === "patient_name")?.value ?? null, claim.readiness !== null);
   const fields = [...claim.fields, ...claim.coded_lines].filter((f) => !f.name.startsWith("invoice_line"));
 
   function select(field: Field) {
@@ -71,10 +70,10 @@ export function Review({ claimId }: { claimId: string }) {
 
   return (
     <div className="review">
-      <p className="crumbs"><a href="/claims" onClick={(e) => { e.preventDefault(); navigate("/claims"); }}>Claims</a> / <span className="mono">{claim.id}</span></p>
+      <p className="crumbs"><Link to="/claims">Claims</Link> / <span className="mono">{claim.id}</span></p>
       <header className="review-head">
         <div>
-          <h1>{patient ?? claim.id}</h1>
+          <h1>{patient}</h1>
           <StatusPill readiness={claim.readiness} lifecycle={claim.lifecycle} />
           {claim.resubmission_deadline && <span className="deadline"> {timeLeft(claim.resubmission_deadline)}</span>}
         </div>

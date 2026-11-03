@@ -146,4 +146,4 @@ def test_today_feed_is_short(client: TestClient) -> None:
     for case_id in ("C01", "C02", "F01", "F02", "F03"):
         client.post(f"/api/claims/{case_id}/run")
 
-    assert len(client.get("/api/today").json()["activity"]) <= 10
+    assert len(client.get("/api/today").json()["activity"]) == 8

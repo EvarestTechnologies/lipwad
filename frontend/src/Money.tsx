@@ -6,7 +6,7 @@ const STAGES: { label: string; note: string; match: (c: Summary) => boolean }[] 
   { label: "Not reviewed", note: "Claim files Lipwad has not read yet", match: (c) => !c.readiness && c.lifecycle === "draft" },
   { label: "Needs a fix", note: "Drafts with a named fix or a block", match: (c) => c.lifecycle === "draft" && !!c.readiness && c.readiness !== "green" },
   { label: "Ready for your OK", note: "Green drafts waiting for a person", match: (c) => c.lifecycle === "draft" && c.readiness === "green" },
-  { label: "Returned or rejected", note: "Inside the 14-day resubmission window", match: (c) => c.lifecycle === "returned" || c.lifecycle === "rejected" },
+  { label: "Returned or rejected", note: "Sent back by SHA, waiting for a fix and resubmission", match: (c) => c.lifecycle === "returned" || c.lifecycle === "rejected" },
   { label: "With SHA", note: "Submitted, waiting for an outcome", match: (c) => c.lifecycle === "submitted" },
   { label: "Paid", note: "Settled by SHA", match: (c) => c.lifecycle === "paid" },
 ];

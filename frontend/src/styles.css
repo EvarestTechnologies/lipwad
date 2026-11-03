@@ -86,8 +86,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: none; box-
   .row-link { flex-wrap: wrap; gap: 8px 12px; }
   .row-link .who { flex-basis: 100%; order: 2; }
   .tabbar { gap: 4px; padding-left: 8px; padding-right: 8px; }
-  .tabbar a { font: var(--text-small); padding: 12px 4px; }
-  .tabbar a { flex: 1; text-align: center; color: var(--navy-text-soft); text-decoration: none; padding: 12px; border-radius: var(--radius-sm); }
+  .tabbar a { flex: 1; min-height: var(--touch); display: flex; align-items: center; justify-content: center; text-align: center; color: var(--navy-text-soft); text-decoration: none; padding: 12px 4px; font: var(--text-small); border-radius: var(--radius-sm); }
   .tabbar a[aria-current="page"] { background: var(--navy-800); color: var(--card); }
   .review-head { flex-direction: column; }
 }

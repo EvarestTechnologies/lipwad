@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { api, headline, ksh, patientName, timeLeft, type Summary, type Today } from "./api";
-import { navigate } from "./App";
+import { navigate } from "./router";
 import { NO_ADVICE, REASON_TEXT, StatusPill } from "./ui";
 
 export function TodayScreen() {
@@ -107,7 +107,7 @@ export function TodayScreen() {
       <section aria-labelledby="feed">
         <h2 id="feed">Lipwad is working</h2>
         <ol className="feed">
-          {today?.activity.slice(0, 8).map((step, index) => (
+          {today?.activity.map((step, index) => (
             <li key={index}>
               <time className="mono">{new Date(step.at).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}</time>
               <span className="mono chip">{step.claim_id}</span>

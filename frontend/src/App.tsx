@@ -8,13 +8,7 @@ import { TodayScreen } from "./Today";
 import { Link } from "./ui";
 
 function currentPath() {
-  return window.location.pathname;
-}
-
-export function navigate(path: string) {
-  window.history.pushState({}, "", path);
-  window.dispatchEvent(new PopStateEvent("popstate"));
-  window.scrollTo(0, 0);
+  return window.location.pathname.replace(/(.)\/+$/, "$1");
 }
 
 const SECTIONS = [
@@ -33,7 +27,7 @@ export function App() {
   }, []);
   const claimId = path.match(/^\/claims\/([\w-]+)/)?.[1];
   const section = claimId ? "/claims" : SECTIONS.find((s) => s.to === path)?.to ?? "/";
-  const screen = claimId ? <Review claimId={claimId} />
+  const screen = claimId ? <Review key={claimId} claimId={claimId} />
     : section === "/claims" ? <ClaimsScreen />
     : section === "/money" ? <MoneyScreen />
     : section === "/rules" ? <RulesScreen />

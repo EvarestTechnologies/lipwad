@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { api, ksh, patientName, timeLeft, type Summary } from "./api";
-import { navigate } from "./App";
+import { navigate } from "./router";
 import { REASON_TEXT, StatusPill } from "./ui";
 
 export function ClaimsScreen() {

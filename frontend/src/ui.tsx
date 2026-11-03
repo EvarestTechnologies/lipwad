@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { Claim } from "./api";
-import { navigate } from "./App";
+import { navigate } from "./router";
 
 const STATUS = {
   green: { word: "Ready", icon: "✓", tone: "ready" },
