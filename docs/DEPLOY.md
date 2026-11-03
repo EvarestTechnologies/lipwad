@@ -29,7 +29,7 @@ Every deploy:
 ```bash
 make deploy      # npm run build in frontend/, then modal deploy deploy/modal_app.py
 ```
-Smoke-test the live URL with `make smoke URL=https://<workspace>--lipwad-web.modal.run`. It checks `/api/health` and loads one seeded claim.
+The live app is at https://stellaacharoiro--lipwad-web.us-east.modal.run. Smoke-test it with `make smoke URL=<live url>`, which checks `/api/health` and the app shell. On first start the container seeds the synthetic cases onto the Volume.
 
 ## CI (`.github/workflows/ci.yml`)
 Runs on every push and pull request:
@@ -38,8 +38,8 @@ Runs on every push and pull request:
 3. A secret scan that fails if anything resembling a key appears in the diff.
 4. Muse Code review: `muse exec` runs headlessly with a review-only prompt against the PR diff (no file writes, no `--yolo`) and posts its findings as a job summary. It authenticates with `META_API_KEY` and is skipped when that repo secret is not set.
 
-## CD (`.github/workflows/deploy.yml`)
-Runs on push to `main` once CI passes, and can also be started by hand with `workflow_dispatch`:
+## CD (`.github/workflows/deploy.yml`, not yet added)
+Deploys currently run from the terminal with `make deploy`. The workflow below needs a Modal token stored as GitHub secrets before it can be added. Once added, it runs on push to `main` once CI passes, and can also be started by hand with `workflow_dispatch`:
 1. Build the frontend.
 2. `modal deploy deploy/modal_app.py`, using the GitHub secrets `MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET`.
 3. Run the smoke test against the live URL and fail the job if it doesn't pass.
