@@ -101,3 +101,76 @@ def test_recorded_f06_fixture_exists() -> None:
     recorded = Transcript.model_validate_json(path.read_text())
 
     assert any(spoken_date(s.text) == "2026-10-11" for s in recorded.segments)
+
+
+def test_segments_without_a_start_or_with_no_length_are_dropped() -> None:
+    events = [
+        {"type": "speechComplete", "audioProcessedMs": 900, "turnId": 0, "transcript": "Orphan."},
+        {"type": "speechStart", "audioProcessedMs": 1000, "turnId": 1},
+        {"type": "speechComplete", "audioProcessedMs": 1000, "turnId": 1, "transcript": "Empty."},
+    ]
+
+    assert segments_from_events(events) == []
+
+
+def test_non_pcm16_audio_is_refused_as_a_model_error(tmp_path: Path) -> None:
+    import wave
+
+    from app.models import ModelAPIError
+    from app.models.transcribe import MetaTranscriber
+
+    wide = tmp_path / "wide.wav"
+    with wave.open(str(wide), "wb") as out:
+        out.setnchannels(1), out.setsampwidth(4), out.setframerate(16000)
+        out.writeframes(b"\0" * 32000)
+    broken = tmp_path / "broken.wav"
+    broken.write_bytes(b"not audio")
+    transcriber = MetaTranscriber("key", url="ws://127.0.0.1:9")
+
+    for path in (wide, broken):
+        with pytest.raises(ModelAPIError):
+            transcriber.transcribe(str(path), "X")
+
+
+def test_transcripts_are_cached_per_file(tmp_path: Path) -> None:
+    from app.models.transcribe import CachedTranscriber
+
+    calls = []
+
+    class Counting:
+        def transcribe(self, audio_path: str, case_id: str) -> Transcript:
+            calls.append(audio_path)
+            return Transcript(segments=[], model_id="m")
+
+    note = tmp_path / "voice_note.wav"
+    note.write_bytes(b"x")
+    cached = CachedTranscriber(Counting())
+    cached.transcribe(str(note), "F06")
+    cached.transcribe(str(note), "F06")
+
+    assert calls == [str(note)]
+
+
+def test_earliest_date_wins_and_impossible_dates_are_ignored() -> None:
+    assert spoken_date("Admitted 11th October 2026, follow-up 2026-10-20.") == "2026-10-11"
+    assert spoken_date("on the thirty first of February 2026") is None
+
+
+def test_only_a_date_said_about_arrival_is_the_admission_date() -> None:
+    transcriber = Fixed(
+        Segment(t_start=0, t_end=3, text="Born on the 3rd of March 1990."),
+        Segment(
+            t_start=4,
+            t_end=8,
+            text="Lab results due 2026-10-20. He was admitted 12th October 2026.",
+        ),
+    )
+    result = transcribe_note(NoteInput(upload=NOTE, case_id="F06"), transcriber)
+
+    assert [f.value for f in result.fields] == ["2026-10-12"]
+
+
+def test_a_note_without_an_arrival_date_gives_no_admission_field() -> None:
+    transcriber = Fixed(Segment(t_start=0, t_end=3, text="Born on the 3rd of March 1990."))
+
+    assert transcribe_note(NoteInput(upload=NOTE, case_id="F06"), transcriber).fields == []

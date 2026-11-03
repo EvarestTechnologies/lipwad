@@ -41,6 +41,7 @@ class Evidence:
     retake_reasons: list[str]
     practitioner_found: bool | None
     facility_level: int | None
+    voice_retake: Citation | None = None
 
 
 def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
@@ -53,6 +54,10 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
         page = Citation(kind="image", source_id=claim.id + "-claim_form", region=[[0, 0], [1, 1]])
         retake = cite("patient_ref", "admission_date") or [page]
         flags.append(Flag(code="retake_required", severity="amber", citations=retake))
+    if evidence.voice_retake:
+        flags.append(
+            Flag(code="voice_note_unclear", severity="amber", citations=[evidence.voice_retake])
+        )
     if fields.get("clinician_signature") and fields["clinician_signature"].value == "absent":
         flags.append(
             Flag(

@@ -6,6 +6,7 @@ request to record it again, never a guessed value.
 """
 
 import re
+from datetime import date
 
 from pydantic import BaseModel
 
@@ -36,7 +37,9 @@ DAY_FIRST = re.compile(
     rf"\b(?P<day>{_DAY})\s+(?:of\s+)?(?P<month>{_MONTH}),?\s+(?P<year>{_YEAR})\b"
 )
 MONTH_FIRST = re.compile(rf"\b(?P<month>{_MONTH})\s+(?P<day>{_DAY}),?\s+(?P<year>{_YEAR})\b")
-ISO = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
+ISO = re.compile(r"\b(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})\b")
+ARRIVAL = re.compile(r"\b(admit\w*|admission|came|arrived|brought|presented)\b", re.I)
+SENTENCE = re.compile(r"(?<=[.!?])\s+")
 
 
 class NoteInput(BaseModel):
@@ -52,16 +55,30 @@ class NoteResult(BaseModel):
 
 
 def spoken_date(text: str) -> str | None:
-    """The first calendar date said in the text, as YYYY-MM-DD."""
+    """The first real calendar date said in the text, as YYYY-MM-DD."""
+    found = []
+    for match in ISO.finditer(text):
+        found.append((match.start(), int(match["year"]), int(match["month"]), int(match["day"])))
     lowered = re.sub(r"[-\s]+", " ", text.lower()).replace(" ,", ",")
-    if match := ISO.search(text):
-        return match.group(0)
     for pattern in (DAY_FIRST, MONTH_FIRST):
-        if match := pattern.search(lowered):
-            day, year = match.group("day"), match.group("year")
+        for match in pattern.finditer(lowered):
+            day, year = match["day"], match["year"]
             day_number = int(re.sub(r"\D", "", day)) if day[0].isdigit() else ORDINALS[day]
             year_number = int(year) if year.isdigit() else SPOKEN_YEARS[year]
-            return f"{year_number:04d}-{MONTHS[match.group('month')]:02d}-{day_number:02d}"
+            found.append((match.start(), year_number, MONTHS[match["month"]], day_number))
+    for _, year, month, day in sorted(found):
+        try:
+            return date(year, month, day).isoformat()
+        except ValueError:
+            continue
+    return None
+
+
+def arrival_date(text: str) -> str | None:
+    """The date in the first sentence that talks about the patient arriving or being admitted."""
+    for sentence in SENTENCE.split(text):
+        if ARRIVAL.search(sentence) and (found := spoken_date(sentence)):
+            return found
     return None
 
 
@@ -77,8 +94,8 @@ def transcribe_note(note: NoteInput, transcriber: Transcriber) -> NoteResult:
         )
     fields = []
     for segment in transcript.segments:
-        date = spoken_date(segment.text)
-        if date:
+        admitted = arrival_date(segment.text)
+        if admitted:
             citation = Citation(
                 kind="audio",
                 source_id=note.upload.id,
@@ -87,7 +104,12 @@ def transcribe_note(note: NoteInput, transcriber: Transcriber) -> NoteResult:
                 quote=segment.text,
             )
             fields.append(
-                Field(name="voice_admission_date", value=date, confidence=1.0, citations=[citation])
+                Field(
+                    name="voice_admission_date",
+                    value=admitted,
+                    confidence=1.0,
+                    citations=[citation],
+                )
             )
             break
     return NoteResult(

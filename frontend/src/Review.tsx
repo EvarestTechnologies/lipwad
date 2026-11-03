@@ -199,19 +199,26 @@ export function Review({ claimId }: { claimId: string }) {
 
 function VoiceClip({ citation }: { citation: Citation }) {
   const audio = useRef<HTMLAudioElement>(null);
+  const clipping = useRef(false);
   const start = citation.t_start ?? 0;
   const end = citation.t_end ?? start;
   function play() {
     if (!audio.current) return;
+    clipping.current = true;
     audio.current.currentTime = start;
     void audio.current.play();
   }
+  // Stop at the end of the cited span only when the clip button started it, so the
+  // native controls can still play the whole note.
   function stopAtEnd() {
-    if (audio.current && audio.current.currentTime >= end) audio.current.pause();
+    if (clipping.current && audio.current && audio.current.currentTime >= end) {
+      clipping.current = false;
+      audio.current.pause();
+    }
   }
   return (
     <div className="voice">
-      <audio ref={audio} src={`/api/uploads/${citation.source_id}/file`} preload="auto" onTimeUpdate={stopAtEnd} controls />
+      <audio ref={audio} src={`/api/uploads/${citation.source_id}/file`} preload="auto" onTimeUpdate={stopAtEnd} onSeeking={() => { if (audio.current && Math.abs(audio.current.currentTime - start) > 0.5) clipping.current = false; }} controls />
       <button onClick={play}>Play {clock(start)}–{clock(end)}</button>
       {citation.quote && <blockquote>“{citation.quote}”</blockquote>}
       <p className="mono">Source: {citation.source_id} · Muse Voice Transcribe</p>

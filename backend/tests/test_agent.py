@@ -175,3 +175,30 @@ def test_voice_note_is_heard_and_logged_with_its_model() -> None:
 
     assert spoken.citations[0].kind == "audio"
     assert any("voice note" in step.text.lower() and step.model for step in activity)
+
+
+class Broken:
+    def transcribe(self, audio_path: str, case_id: str):
+        from app.models import ModelAPIError
+
+        raise ModelAPIError("unreadable audio")
+
+
+def test_unreadable_voice_note_blocks_green_with_a_re_record_request() -> None:
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    hie = MockHIE(script=mock_script(list(CASES.values())))
+    agent = ClaimAgent(
+        vision=StubProvider(Role.VISION, load_fixtures(DATA_DIR)),
+        reasoning=FakeReasoning(),
+        hie=hie,
+        transcriber=Broken(),
+    )
+    with Session(engine) as session:
+        seed_claims(session, list(CASES.values()))
+        agent.run(session, "F06", case_uploads(DATA_DIR, "F06"))
+        claim = load_claim(session, "F06")
+
+    codes = {flag.code for flag in claim.flags}
+    assert "voice_note_unclear" in codes and "retake_required" not in codes
+    assert claim.readiness == Readiness.AMBER

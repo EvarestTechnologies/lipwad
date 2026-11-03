@@ -34,6 +34,7 @@ class Segment(BaseModel):
 class Transcript(BaseModel):
     segments: list[Segment]
     model_id: str
+    duration_s: float = 0.0
 
 
 class Transcriber(Protocol):
@@ -49,13 +50,10 @@ def segments_from_events(events: Iterable[Mapping[str, Any]]) -> list[Segment]:
         if kind == "speechStart":
             starts[turn] = event["audioProcessedMs"] / 1000
         elif kind == "speechComplete" and event.get("transcript", "").strip():
-            segments.append(
-                Segment(
-                    t_start=starts.get(turn, 0.0),
-                    t_end=event["audioProcessedMs"] / 1000,
-                    text=event["transcript"].strip(),
-                )
-            )
+            start, end = starts.get(turn), event["audioProcessedMs"] / 1000
+            if start is None or end <= start:
+                continue
+            segments.append(Segment(t_start=start, t_end=end, text=event["transcript"].strip()))
     return sorted(segments, key=lambda segment: segment.t_start)
 
 
@@ -71,11 +69,15 @@ class MetaTranscriber:
         from websockets.exceptions import ConnectionClosed, WebSocketException
         from websockets.sync.client import connect
 
-        with wave.open(audio_path) as audio:
-            rate, channels = audio.getframerate(), audio.getnchannels()
-            pcm = audio.readframes(audio.getnframes())
-        if rate not in ENCODINGS or channels != 1 or len(pcm) % 2:
+        try:
+            with wave.open(audio_path) as audio:
+                rate, channels = audio.getframerate(), audio.getnchannels()
+                width, pcm = audio.getsampwidth(), audio.readframes(audio.getnframes())
+        except (wave.Error, EOFError, OSError) as error:
+            raise ModelAPIError(f"{audio_path} is not a readable WAV file: {error}") from error
+        if rate not in ENCODINGS or channels != 1 or width != 2 or len(pcm) % 2:
             raise ModelAPIError(f"{audio_path} must be mono PCM16 at 16 or 24 kHz")
+        duration = len(pcm) / (rate * 2)
         pcm += b"\0" * (rate * 2 * TRAILING_SILENCE_S)
         packet = rate * 2 * PACKET_MS // 1000
         events: list[dict[str, Any]] = []
@@ -98,7 +100,9 @@ class MetaTranscriber:
         errors = [event for event in events if event.get("type") == "error"]
         if errors:
             raise ModelAPIError(f"Muse Voice Transcribe failed: {errors[0].get('message')}")
-        return Transcript(segments=segments_from_events(events), model_id=MODEL_ID)
+        return Transcript(
+            segments=segments_from_events(events), model_id=MODEL_ID, duration_s=duration
+        )
 
     def _handshake(self, rate: int) -> dict[str, Any]:
         return {
@@ -119,6 +123,30 @@ def _drain(socket) -> list[dict[str, Any]]:
             events.append(json.loads(socket.recv(timeout=0)))
         except TimeoutError:
             return events
+
+
+class CachedTranscriber:
+    """Hears each voice note once: the realtime stream is paid and takes as long as the note."""
+
+    def __init__(self, inner: Transcriber) -> None:
+        self._inner = inner
+        self._seen: dict[tuple[str, int, int], Transcript] = {}
+
+    def transcribe(self, audio_path: str, case_id: str) -> Transcript:
+        stat = Path(audio_path).stat()
+        key = (audio_path, stat.st_mtime_ns, stat.st_size)
+        if key not in self._seen:
+            self._seen[key] = self._inner.transcribe(audio_path, case_id)
+        return self._seen[key]
+
+
+def audio_seconds(audio_path: str) -> float:
+    """Length of a WAV file, or 0 when it cannot be read."""
+    try:
+        with wave.open(audio_path) as audio:
+            return audio.getnframes() / audio.getframerate()
+    except (wave.Error, EOFError, OSError, ZeroDivisionError):
+        return 0.0
 
 
 class FixtureTranscriber:
@@ -144,4 +172,4 @@ def create_transcriber(
     key = (settings.get("META_MODEL_API_KEY") or "").strip()
     if not key:
         raise MissingAPIKeyError("META_MODEL_API_KEY is required for Muse Voice Transcribe")
-    return MetaTranscriber(key)
+    return CachedTranscriber(MetaTranscriber(key))

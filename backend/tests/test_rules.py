@@ -54,3 +54,15 @@ def test_matching_voice_and_form_dates_are_not_flagged() -> None:
     assert "admission_date_mismatch" not in codes(
         admission_date="2026-10-12", voice_admission_date="2026-10-12"
     )
+
+
+def test_an_unclear_voice_note_asks_for_a_new_recording_not_a_photo() -> None:
+    from app.agent.rules import Evidence as Ev
+
+    note = Citation(kind="audio", source_id="F06-voice_note", t_start=0, t_end=22.2)
+    flags = check(
+        Claim(id="X"), Ev({}, [], True, 3, voice_retake=note), datetime(2026, 11, 3, tzinfo=UTC)
+    )
+
+    assert [f.code for f in flags] == ["voice_note_unclear"]
+    assert flags[0].citations == [note]

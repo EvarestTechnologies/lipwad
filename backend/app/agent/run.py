@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.agent.rules import Evidence, check, rule
 from app.db.repository import add_activity, list_uploads, load_claim, save_claim, save_upload
-from app.db.schemas import ActivityStep, Field, Lifecycle, Readiness, Upload
+from app.db.schemas import ActivityStep, Citation, Field, Lifecycle, Readiness, Upload
 from app.hie.base import ClaimPatch, Confirmation, HieAdapter
 from app.models import (
     ChatMessage,
@@ -23,7 +23,7 @@ from app.models import (
     ModelClient,
     StubFixtureMissingError,
 )
-from app.models.transcribe import Transcriber
+from app.models.transcribe import Transcriber, audio_seconds
 from app.tools.intake import DocumentInput, extract_document
 from app.tools.listen import NoteInput, transcribe_note
 
@@ -92,11 +92,12 @@ class ClaimAgent:
         known = {upload.id for upload in list_uploads(session, case_id)}
         fields: dict[str, Field] = {}
         retake: list[str] = []
+        voice_retake: Citation | None = None
         for upload in uploads:
             if upload.id not in known:
                 save_upload(session, upload)
             if upload.kind == "audio":
-                self._listen(session, case_id, upload, fields, retake)
+                voice_retake = self._listen(session, case_id, upload, fields)
                 continue
             kind = upload.filename.removesuffix(".png")
             result = extract_document(
@@ -133,7 +134,7 @@ class ClaimAgent:
                 practitioner.citations,
             )
 
-        flags = check(claim, Evidence(fields, retake, found, level), self._clock())
+        flags = check(claim, Evidence(fields, retake, found, level, voice_retake), self._clock())
         coded = []
         if "diagnosis" in fields:
             coded.append(
@@ -161,17 +162,23 @@ class ClaimAgent:
         )
         self._explain(session, claim)
 
-    def _listen(self, session, case_id, upload, fields, retake) -> None:
+    def _listen(self, session, case_id, upload, fields) -> Citation | None:
+        """Hear a voice note into `fields`; return a re-record citation if it was not heard."""
+        whole_note = Citation(
+            kind="audio",
+            source_id=upload.id,
+            t_start=0,
+            t_end=max(audio_seconds(upload.path), 0.1),
+        )
         if self._transcriber is None:
             self._log(session, case_id, "read", "Voice note skipped: no transcriber", None, [])
-            return
+            return None
         try:
             result = transcribe_note(NoteInput(upload=upload, case_id=case_id), self._transcriber)
         except (ModelAPIError, StubFixtureMissingError) as error:
-            self._log(session, case_id, "read", f"Voice note unavailable: {error}", None, [])
-            return
+            self._log(session, case_id, "read", f"Voice note could not be heard: {error}", None, [])
+            return whole_note
         fields.update({field.name: field for field in result.fields})
-        retake += result.retake_reasons
         heard = "; ".join(f'"{c.quote}"' for f in result.fields for c in f.citations)
         self._log(
             session,
@@ -183,6 +190,7 @@ class ClaimAgent:
             result.model,
             [c for field in result.fields for c in field.citations],
         )
+        return whole_note if result.retake_reasons else None
 
     def _explain(self, session: Session, claim) -> None:
         payload = {

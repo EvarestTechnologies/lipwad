@@ -34,6 +34,7 @@ export const REASON_TEXT: Record<string, string> = {
   retake_required: "The photo is too unclear to read. Retake it in better light.",
   resubmission_deadline_near: "SHA returned this claim and the resubmission window closes soon.",
   claim_rejected: "SHA rejected this claim. Review the reason and resubmit.",
+  voice_note_unclear: "The voice note could not be heard. Record it again somewhere quiet.",
   admission_date_mismatch: "The voice note gives a different admission date from the claim form. Confirm it with the ward.",
 };
 

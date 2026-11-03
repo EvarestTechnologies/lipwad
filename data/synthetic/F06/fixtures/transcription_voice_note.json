@@ -16,5 +16,6 @@
       "text": "He was treated as an outpatient and went home the same day."
     }
   ],
-  "model_id": "muse-voice-transcribe-1.0"
+  "model_id": "muse-voice-transcribe-1.0",
+  "duration_s": 22.23
 }

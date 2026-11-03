@@ -14,7 +14,7 @@
     "patient_name": "Musa Kariuki [demo]",
     "admission_date": "2026-10-12",
     "discharge_date": "2026-10-12",
-    "voice_note_admission_date": "2026-10-11",
+    "voice_admission_date": "2026-10-11",
     "diagnosis": "Fever and cough, malaria test negative"
   },
   "codes": [

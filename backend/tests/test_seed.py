@@ -152,7 +152,7 @@ def test_outpatient_cases_have_same_day_discharge() -> None:
 def test_f06_sources_disagree_on_admission_date() -> None:
     f06 = next(case for case in load_cases(DATA_DIR) if case.case_id == "F06")
 
-    assert f06.fields["voice_note_admission_date"] != f06.fields["admission_date"]
+    assert f06.fields["voice_admission_date"] != f06.fields["admission_date"]
 
 
 def test_registration_comes_from_the_case_data() -> None:

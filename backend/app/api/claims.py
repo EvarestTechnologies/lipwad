@@ -20,6 +20,7 @@ ACTIONS = {
     "resubmission_deadline_near": "Fix and resubmit before the window closes",
     "claim_rejected": "Review the rejection and resubmit",
     "admission_date_mismatch": "Confirm the admission date with the ward and correct it",
+    "voice_note_unclear": "Record the voice note again somewhere quiet",
 }
 
 TODAY_FEED = 8
