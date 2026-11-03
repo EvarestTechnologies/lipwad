@@ -223,3 +223,4 @@ frontend/dist/
 frontend/dev-dist/
 *.db
 uploads/
+hie_state.json

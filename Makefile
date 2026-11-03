@@ -9,7 +9,7 @@ test:
 	cd backend && uv run pytest
 
 seed:
-	@echo "Seed loader arrives with the synthetic data issue." && exit 1
+	cd backend && uv run python -m app.db.seed
 
 lint:
 	cd backend && uv run ruff check . && uv run ruff format --check .

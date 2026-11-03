@@ -1,0 +1,25 @@
+{
+  "case_id": "F08",
+  "facility_level": 3,
+  "facility_id": "FAC-L3",
+  "patient_ref": "PT-011",
+  "practitioner_id": "PR-100",
+  "service_type": "outpatient",
+  "date_of_service": "2026-10-12",
+  "expected_status": "amber",
+  "expected_reasons": [
+    "retake_required"
+  ],
+  "fields": {
+    "patient_name": "Synthetic Patient 11 [demo]",
+    "admission_date": "2026-10-12",
+    "discharge_date": "2026-10-12"
+  },
+  "codes": [
+    "PLACEHOLDER-001"
+  ],
+  "mock_hie_outcome": "accept",
+  "mock_hie_reasons": [],
+  "days_since_outcome": null,
+  "practitioner_registered": true
+}

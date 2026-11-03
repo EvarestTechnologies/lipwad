@@ -1,0 +1,27 @@
+{
+  "case_id": "F09",
+  "facility_level": 4,
+  "facility_id": "FAC-L4",
+  "patient_ref": "PT-012",
+  "practitioner_id": "PR-100",
+  "service_type": "inpatient",
+  "date_of_service": "2026-10-12",
+  "expected_status": "amber",
+  "expected_reasons": [
+    "claim_rejected"
+  ],
+  "fields": {
+    "patient_name": "Synthetic Patient 12 [demo]",
+    "admission_date": "2026-10-12",
+    "discharge_date": "2026-10-14"
+  },
+  "codes": [
+    "PLACEHOLDER-001"
+  ],
+  "mock_hie_outcome": "reject",
+  "mock_hie_reasons": [
+    "itemised_invoice_missing"
+  ],
+  "days_since_outcome": 2,
+  "practitioner_registered": true
+}

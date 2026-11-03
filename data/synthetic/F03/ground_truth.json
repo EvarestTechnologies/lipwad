@@ -1,0 +1,25 @@
+{
+  "case_id": "F03",
+  "facility_level": 3,
+  "facility_id": "FAC-L3",
+  "patient_ref": "PT-006",
+  "practitioner_id": "PR-100",
+  "service_type": "inpatient",
+  "date_of_service": "2026-10-12",
+  "expected_status": "red",
+  "expected_reasons": [
+    "service_type_inconsistent"
+  ],
+  "fields": {
+    "patient_name": "Synthetic Patient 06 [demo]",
+    "admission_date": "2026-10-12",
+    "discharge_date": "2026-10-14"
+  },
+  "codes": [
+    "PLACEHOLDER-001"
+  ],
+  "mock_hie_outcome": "accept",
+  "mock_hie_reasons": [],
+  "days_since_outcome": null,
+  "practitioner_registered": true
+}
