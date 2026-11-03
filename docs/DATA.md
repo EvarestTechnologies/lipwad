@@ -45,8 +45,8 @@ Add more as time allows. C01–C03 and F01–F05 are demo-critical.
 ```
 
 ## 4. Production checklist
-- [ ] Download blank forms and note them in SOURCES.md
-- [ ] Write invented patient and practitioner profiles
-- [ ] Fill, print and photograph each case (aim for 2–4 photos per case)
-- [ ] Record voice notes and name files `<case_id>_voice.m4a`
-- [ ] Write ground_truth.json for each case
+- [x] Blank forms: none downloaded. Claim forms and invoices are original layouts rendered by `backend/scripts/make_documents.py` (see SOURCES.md).
+- [x] Write invented patient and practitioner profiles (names carry `[demo]` in ground truth)
+- [x] Render each case's documents from ground truth instead of printing and photographing them, watermarked "SYNTHETIC - DEMO ONLY"
+- [x] Record voice notes as mono 16 kHz PCM16 WAV, named `<case_id>/voice_note.wav` (F06 so far)
+- [x] Write ground_truth.json for each case
