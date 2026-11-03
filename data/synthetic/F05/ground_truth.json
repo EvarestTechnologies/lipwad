@@ -22,5 +22,6 @@
   "mock_hie_reasons": [
     "signature_missing"
   ],
-  "days_since_outcome": 13
+  "days_since_outcome": 13,
+  "practitioner_registered": true
 }

@@ -7,18 +7,18 @@ from sqlalchemy.orm import Session
 from app.db.repository import load_claim
 from app.db.schemas import Lifecycle
 from app.db.seed import (
+    DATA_DIR,
     DEMO_CRITICAL_CASES,
     GroundTruth,
     load_cases,
     mock_script,
     register_submissions,
     seed_claims,
+    seed_database,
 )
 from app.db.tables import Base, ClaimRow
 from app.hie.base import Adjudication
 from app.hie.mock import MockHIE
-
-DATA_DIR = Path(__file__).parents[2] / "data" / "synthetic"
 
 
 def engine():
@@ -124,3 +124,54 @@ def test_seeded_submissions_are_known_to_the_mock() -> None:
     assert hie.get_claim_status("HIE-F05").outcome is Adjudication.RETURN
     assert hie.get_claim_status("HIE-F05").error == ["signature_missing"]
     assert hie.get_claim_status("HIE-F09").outcome is Adjudication.REJECT
+
+
+def test_case_ids_are_unique_and_match_their_directory() -> None:
+    paths = sorted(DATA_DIR.glob("*/ground_truth.json"))
+    cases = load_cases(DATA_DIR)
+
+    assert [case.case_id for case in cases] == [path.parent.name for path in paths]
+
+
+def test_draft_submission_deadline_follows_discharge() -> None:
+    db = engine()
+    with Session(db) as session:
+        seed_claims(session, load_cases(DATA_DIR))
+        session.commit()
+        claim = load_claim(session, "C02")
+
+    assert claim.discharge_date.isoformat() == "2026-10-14"
+
+
+def test_outpatient_cases_have_same_day_discharge() -> None:
+    for case in load_cases(DATA_DIR):
+        if case.service_type == "outpatient":
+            assert case.fields["admission_date"] == case.fields["discharge_date"]
+
+
+def test_f06_sources_disagree_on_admission_date() -> None:
+    f06 = next(case for case in load_cases(DATA_DIR) if case.case_id == "F06")
+
+    assert f06.fields["voice_note_admission_date"] != f06.fields["admission_date"]
+
+
+def test_registration_comes_from_the_case_data() -> None:
+    cases = load_cases(DATA_DIR)
+    hie = MockHIE(script=mock_script(cases))
+
+    for case in cases:
+        assert hie.lookup_practitioner(case.practitioner_id).found is case.practitioner_registered
+
+
+def test_seed_database_gives_the_mock_the_rescue_history(tmp_path: Path) -> None:
+    state = tmp_path / "hie.json"
+    url = f"sqlite:///{tmp_path / 'lipwad.db'}"
+
+    seed_database(url, state)
+    seed_database(url, state)
+
+    hie = MockHIE(script=mock_script(load_cases(DATA_DIR)), state_path=state)
+    assert hie.get_claim_status("HIE-F05").error == ["signature_missing"]
+    db = create_engine(url)
+    with Session(db) as session:
+        assert load_claim(session, "F05").resubmission_deadline is not None

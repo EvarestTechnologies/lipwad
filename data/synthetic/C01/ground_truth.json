@@ -11,12 +11,13 @@
   "fields": {
     "patient_name": "Synthetic Patient 01 [demo]",
     "admission_date": "2026-10-12",
-    "discharge_date": "2026-10-14"
+    "discharge_date": "2026-10-12"
   },
   "codes": [
     "PLACEHOLDER-001"
   ],
   "mock_hie_outcome": "accept",
   "mock_hie_reasons": [],
-  "days_since_outcome": null
+  "days_since_outcome": null,
+  "practitioner_registered": true
 }

@@ -22,5 +22,6 @@
   "mock_hie_reasons": [
     "itemised_invoice_missing"
   ],
-  "days_since_outcome": 2
+  "days_since_outcome": 2,
+  "practitioner_registered": true
 }
