@@ -29,7 +29,9 @@ Every deploy:
 ```bash
 make deploy      # npm run build in frontend/, then modal deploy deploy/modal_app.py
 ```
-The live app is at https://stellaacharoiro--lipwad-web.us-east.modal.run. Smoke-test it with `make smoke URL=<live url>`, which checks `/api/health` and the app shell. On first start the container seeds the synthetic cases onto the Volume.
+The live app is at https://stellaacharoiro--lipwad-web.us-east.modal.run.
+
+After a deploy and `make review-all URL=<live url>`, run `make snapshot URL=<live url>` to save that state as the demo the app restores every 6 hours. The snapshot endpoint needs `LIPWAD_ADMIN_KEY` in `.env` and in the `lipwad-env` secret. Smoke-test it with `make smoke URL=<live url>`, which checks `/api/health` and the app shell. On first start the container seeds the synthetic cases onto the Volume.
 
 ## CI (`.github/workflows/ci.yml`)
 Runs on every push and pull request:

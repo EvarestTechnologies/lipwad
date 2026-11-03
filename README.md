@@ -4,7 +4,7 @@
 
 > **Lipwad is not medical AI.** It documents and codes what already happened. It never gives clinical advice, never recommends treatment, and never adds or upgrades services or amounts. Nothing reaches the national HIE without a named person's confirmation.
 
-**Live demo:** https://stellaacharoiro--lipwad-web.us-east.modal.run (all patients, practitioners and facilities are synthetic)
+**Live demo:** https://stellaacharoiro--lipwad-web.us-east.modal.run (all patients, practitioners and facilities are synthetic). The demo restores itself every 6 hours and allows a limited number of model runs per day.
 
 Built solo for the Meta Global AI Developer Hackathon (Startup track), Oct 27 – Nov 4, 2026, by Evarest Technologies. Everything in this repository was written during the build window; the commit history is the record.
 
