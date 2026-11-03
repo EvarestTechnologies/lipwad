@@ -11,10 +11,11 @@
     "admission_date_mismatch"
   ],
   "fields": {
-    "patient_name": "Synthetic Patient 09 [demo]",
+    "patient_name": "Musa Kariuki [demo]",
     "admission_date": "2026-10-12",
     "discharge_date": "2026-10-12",
-    "voice_note_admission_date": "2026-10-11"
+    "voice_note_admission_date": "2026-10-11",
+    "diagnosis": "Fever and cough, malaria test negative"
   },
   "codes": [
     "PLACEHOLDER-001"
@@ -22,5 +23,22 @@
   "mock_hie_outcome": "accept",
   "mock_hie_reasons": [],
   "days_since_outcome": null,
-  "practitioner_registered": true
+  "practitioner_registered": true,
+  "documents_service_type": "outpatient",
+  "invoice_items": [
+    [
+      "Consultation",
+      1000
+    ],
+    [
+      "Malaria test",
+      800
+    ],
+    [
+      "Medication",
+      700
+    ]
+  ],
+  "invoice_itemised": true,
+  "form_signed": true
 }

@@ -11,9 +11,10 @@
     "service_type_inconsistent"
   ],
   "fields": {
-    "patient_name": "Synthetic Patient 06 [demo]",
+    "patient_name": "Otieno Ouma [demo]",
     "admission_date": "2026-10-12",
-    "discharge_date": "2026-10-14"
+    "discharge_date": "2026-10-12",
+    "diagnosis": "Fever and cough, malaria test negative"
   },
   "codes": [
     "PLACEHOLDER-001"
@@ -21,5 +22,22 @@
   "mock_hie_outcome": "accept",
   "mock_hie_reasons": [],
   "days_since_outcome": null,
-  "practitioner_registered": true
+  "practitioner_registered": true,
+  "documents_service_type": "outpatient",
+  "invoice_items": [
+    [
+      "Bed days x2",
+      6000
+    ],
+    [
+      "Consultation",
+      1500
+    ],
+    [
+      "Medication",
+      700
+    ]
+  ],
+  "invoice_itemised": true,
+  "form_signed": true
 }

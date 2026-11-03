@@ -82,3 +82,15 @@ class UploadRow(Base):
     kind: Mapped[str]
     filename: Mapped[str]
     path: Mapped[str]
+
+
+class ActivityRow(Base):
+    __tablename__ = "activity"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    claim_id: Mapped[str] = mapped_column(ForeignKey("claims.id"), index=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    kind: Mapped[str]
+    text: Mapped[str]
+    model: Mapped[str | None]
+    citations: Mapped[list] = mapped_column(JSON)

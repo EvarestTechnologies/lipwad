@@ -1,0 +1,45 @@
+{
+  "lines": [
+    {
+      "description": "Delivery package",
+      "amount": 10000,
+      "bbox": [
+        61,
+        452,
+        915,
+        479
+      ]
+    },
+    {
+      "description": "Bed day x1",
+      "amount": 3000,
+      "bbox": [
+        62,
+        528,
+        908,
+        557
+      ]
+    },
+    {
+      "description": "Medication",
+      "amount": 1200,
+      "bbox": [
+        62,
+        604,
+        906,
+        632
+      ]
+    }
+  ],
+  "total": {
+    "amount": 14200,
+    "bbox": [
+      62,
+      718,
+      913,
+      751
+    ]
+  },
+  "itemised": true,
+  "unreadable": []
+}

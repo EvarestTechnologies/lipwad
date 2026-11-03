@@ -1,0 +1,120 @@
+{
+  "fields": [
+    {
+      "name": "patient_name",
+      "value": "Wanjiru Achieng",
+      "confidence": 0.99,
+      "bbox": [
+        0.432,
+        0.227,
+        0.621,
+        0.249
+      ],
+      "quote": "Wanjiru Achieng"
+    },
+    {
+      "name": "patient_ref",
+      "value": "PT-001",
+      "confidence": 0.99,
+      "bbox": [
+        0.432,
+        0.277,
+        0.52,
+        0.299
+      ],
+      "quote": "PT-001"
+    },
+    {
+      "name": "visit_type",
+      "value": "Outpatient",
+      "confidence": 0.99,
+      "bbox": [
+        0.432,
+        0.324,
+        0.568,
+        0.346
+      ],
+      "quote": "Outpatient"
+    },
+    {
+      "name": "admission_date",
+      "value": "2026-10-12",
+      "confidence": 0.99,
+      "bbox": [
+        0.432,
+        0.376,
+        0.567,
+        0.397
+      ],
+      "quote": "2026-10-12"
+    },
+    {
+      "name": "discharge_date",
+      "value": "2026-10-12",
+      "confidence": 0.99,
+      "bbox": [
+        0.432,
+        0.426,
+        0.567,
+        0.447
+      ],
+      "quote": "2026-10-12"
+    },
+    {
+      "name": "diagnosis",
+      "value": "Fever and cough, malaria test negative",
+      "confidence": 0.99,
+      "bbox": [
+        0.432,
+        0.48,
+        0.873,
+        0.503
+      ],
+      "quote": "Fever and cough, malaria test negative"
+    },
+    {
+      "name": "practitioner_name",
+      "value": "Dr. Amani Otieno",
+      "confidence": 0.99,
+      "bbox": [
+        0.432,
+        0.531,
+        0.633,
+        0.553
+      ],
+      "quote": "Dr. Amani Otieno"
+    },
+    {
+      "name": "practitioner_id",
+      "value": "PR-100",
+      "confidence": 0.99,
+      "bbox": [
+        0.432,
+        0.583,
+        0.52,
+        0.604
+      ],
+      "quote": "PR-100"
+    },
+    {
+      "name": "facility_id",
+      "value": "FAC-L3",
+      "confidence": 0.99,
+      "bbox": [
+        0.241,
+        0.114,
+        0.327,
+        0.131
+      ],
+      "quote": "FAC-L3"
+    }
+  ],
+  "signature_present": true,
+  "signature_bbox": [
+    0.43,
+    0.769,
+    0.81,
+    0.807
+  ],
+  "unreadable": []
+}

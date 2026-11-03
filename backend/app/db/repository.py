@@ -5,8 +5,17 @@ from datetime import UTC
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.db.schemas import Citation, Claim, Field, Flag, Lifecycle, Readiness, Upload
-from app.db.tables import CitationRow, ClaimRow, FieldRow, FlagRow, UploadRow
+from app.db.schemas import (
+    ActivityStep,
+    Citation,
+    Claim,
+    Field,
+    Flag,
+    Lifecycle,
+    Readiness,
+    Upload,
+)
+from app.db.tables import ActivityRow, CitationRow, ClaimRow, FieldRow, FlagRow, UploadRow
 
 
 class StaleClaimError(Exception):
@@ -76,6 +85,38 @@ def load_claim(session: Session, claim_id: str) -> Claim | None:
 def save_upload(session: Session, upload: Upload) -> None:
     session.add(UploadRow(**upload.model_dump()))
     session.flush()
+
+
+def add_activity(session: Session, step: ActivityStep) -> None:
+    data = step.model_dump(mode="json")
+    session.add(ActivityRow(**{**data, "at": step.at.astimezone(UTC)}))
+    session.flush()
+
+
+def list_activity(
+    session: Session, claim_id: str | None = None, latest: int | None = None
+) -> list[ActivityStep]:
+    """Activity in time order; with `latest`, only that many of the most recent steps."""
+    query = select(ActivityRow).order_by(ActivityRow.at.desc(), ActivityRow.id.desc())
+    if claim_id is not None:
+        query = query.where(ActivityRow.claim_id == claim_id)
+    if latest is not None:
+        query = query.limit(latest)
+    return list(
+        reversed(
+            [
+                ActivityStep(
+                    claim_id=row.claim_id,
+                    at=row.at.replace(tzinfo=UTC),
+                    kind=row.kind,
+                    text=row.text,
+                    model=row.model,
+                    citations=row.citations,
+                )
+                for row in session.scalars(query)
+            ]
+        )
+    )
 
 
 def list_uploads(session: Session, claim_id: str) -> list[Upload]:

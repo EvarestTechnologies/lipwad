@@ -25,6 +25,7 @@ image = (
             "UPLOAD_DIR": f"{DATA}/uploads",
             "HIE_MODE": "mock",
             "STATIC_DIR": "/root/frontend/dist",
+            "LIPWAD_SERVE_API": "1",
         }
     )
     .add_local_dir("backend/app", "/root/backend/app")
@@ -46,9 +47,10 @@ volume = modal.Volume.from_name("lipwad-data", create_if_missing=True)
 @modal.asgi_app()
 def web():
     from app.db.seed import seed_database
-    from app.main import app as fastapi_app
 
     if not Path(DATA, "lipwad.db").exists():
         seed_database(os.environ["DATABASE_URL"], Path(os.environ["HIE_STATE_PATH"]))
         volume.commit()
+    from app.main import app as fastapi_app  # builds services against the seeded volume
+
     return fastapi_app

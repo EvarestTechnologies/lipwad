@@ -1,0 +1,120 @@
+{
+  "fields": [
+    {
+      "name": "patient_name",
+      "value": "Musa Kariuki",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.222,
+        0.585,
+        0.244
+      ],
+      "quote": "Musa Kariuki"
+    },
+    {
+      "name": "patient_ref",
+      "value": "PT-009",
+      "confidence": 0.99,
+      "bbox": [
+        0.422,
+        0.275,
+        0.535,
+        0.297
+      ],
+      "quote": "PT-009"
+    },
+    {
+      "name": "visit_type",
+      "value": "Outpatient",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.322,
+        0.552,
+        0.347
+      ],
+      "quote": "Outpatient"
+    },
+    {
+      "name": "admission_date",
+      "value": "2026-10-12",
+      "confidence": 0.99,
+      "bbox": [
+        0.422,
+        0.373,
+        0.572,
+        0.396
+      ],
+      "quote": "2026-10-12"
+    },
+    {
+      "name": "discharge_date",
+      "value": "2026-10-12",
+      "confidence": 0.99,
+      "bbox": [
+        0.422,
+        0.427,
+        0.572,
+        0.45
+      ],
+      "quote": "2026-10-12"
+    },
+    {
+      "name": "diagnosis",
+      "value": "Fever and cough, malaria test negative",
+      "confidence": 0.99,
+      "bbox": [
+        0.422,
+        0.483,
+        0.895,
+        0.505
+      ],
+      "quote": "Fever and cough, malaria test negative"
+    },
+    {
+      "name": "practitioner_name",
+      "value": "Dr. Amani Otieno",
+      "confidence": 0.99,
+      "bbox": [
+        0.422,
+        0.538,
+        0.642,
+        0.561
+      ],
+      "quote": "Dr. Amani Otieno"
+    },
+    {
+      "name": "practitioner_id",
+      "value": "PR-100",
+      "confidence": 0.99,
+      "bbox": [
+        0.422,
+        0.592,
+        0.527,
+        0.614
+      ],
+      "quote": "PR-100"
+    },
+    {
+      "name": "facility_id",
+      "value": "FAC-L3",
+      "confidence": 0.99,
+      "bbox": [
+        0.24,
+        0.112,
+        0.327,
+        0.129
+      ],
+      "quote": "FAC-L3"
+    }
+  ],
+  "signature_present": true,
+  "signature_bbox": [
+    0.42,
+    0.754,
+    0.81,
+    0.795
+  ],
+  "unreadable": []
+}

@@ -1,0 +1,45 @@
+{
+  "lines": [
+    {
+      "description": "Bed days x2",
+      "amount": 6000,
+      "bbox": [
+        60,
+        260,
+        860,
+        285
+      ]
+    },
+    {
+      "description": "Consultation",
+      "amount": 1500,
+      "bbox": [
+        60,
+        310,
+        860,
+        335
+      ]
+    },
+    {
+      "description": "Medication",
+      "amount": 700,
+      "bbox": [
+        60,
+        355,
+        815,
+        380
+      ]
+    }
+  ],
+  "total": {
+    "amount": 8200,
+    "bbox": [
+      60,
+      415,
+      870,
+      445
+    ]
+  },
+  "itemised": true,
+  "unreadable": []
+}

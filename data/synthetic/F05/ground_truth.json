@@ -11,9 +11,10 @@
     "resubmission_deadline_near"
   ],
   "fields": {
-    "patient_name": "Synthetic Patient 08 [demo]",
+    "patient_name": "Chebet Rotich [demo]",
     "admission_date": "2026-10-12",
-    "discharge_date": "2026-10-14"
+    "discharge_date": "2026-10-14",
+    "diagnosis": "Pneumonia, admitted for IV antibiotics"
   },
   "codes": [
     "PLACEHOLDER-001"
@@ -23,5 +24,26 @@
     "signature_missing"
   ],
   "days_since_outcome": 13,
-  "practitioner_registered": true
+  "practitioner_registered": true,
+  "documents_service_type": "inpatient",
+  "invoice_items": [
+    [
+      "Bed days x2",
+      6000
+    ],
+    [
+      "IV antibiotics",
+      4500
+    ],
+    [
+      "Chest X-ray",
+      2500
+    ],
+    [
+      "Consultation",
+      1500
+    ]
+  ],
+  "invoice_itemised": true,
+  "form_signed": false
 }

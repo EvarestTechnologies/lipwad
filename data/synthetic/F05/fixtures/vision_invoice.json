@@ -1,0 +1,55 @@
+{
+  "lines": [
+    {
+      "description": "Bed days x2",
+      "amount": 6000,
+      "bbox": [
+        65,
+        272,
+        878,
+        295
+      ]
+    },
+    {
+      "description": "IV antibiotics",
+      "amount": 4500,
+      "bbox": [
+        65,
+        322,
+        878,
+        345
+      ]
+    },
+    {
+      "description": "Chest X-ray",
+      "amount": 2500,
+      "bbox": [
+        65,
+        370,
+        878,
+        397
+      ]
+    },
+    {
+      "description": "Consultation",
+      "amount": 1500,
+      "bbox": [
+        65,
+        418,
+        878,
+        444
+      ]
+    }
+  ],
+  "total": {
+    "amount": 14500,
+    "bbox": [
+      65,
+      482,
+      885,
+      508
+    ]
+  },
+  "itemised": true,
+  "unreadable": []
+}

@@ -38,6 +38,8 @@ class OpenAICompatibleClient:
             "model": self._config.model_id,
             "messages": [item.model_dump() for item in request.messages],
         }
+        if request.json_output:
+            payload["response_format"] = {"type": "json_object"}
         data = self._post("chat/completions", payload)
         try:
             content = data["choices"][0]["message"]["content"]

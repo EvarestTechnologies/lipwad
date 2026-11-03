@@ -1,0 +1,25 @@
+{
+  "lines": [
+    {
+      "description": "Medical services",
+      "amount": 14500,
+      "bbox": [
+        63,
+        267,
+        870,
+        292
+      ]
+    }
+  ],
+  "total": {
+    "amount": 14500,
+    "bbox": [
+      731,
+      344,
+      883,
+      367
+    ]
+  },
+  "itemised": false,
+  "unreadable": []
+}

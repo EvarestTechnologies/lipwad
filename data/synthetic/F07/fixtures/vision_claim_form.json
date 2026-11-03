@@ -1,0 +1,120 @@
+{
+  "fields": [
+    {
+      "name": "patient_name",
+      "value": "Akinyi Odhiambo",
+      "confidence": 0.99,
+      "bbox": [
+        0.417,
+        0.22,
+        0.64,
+        0.245
+      ],
+      "quote": "Akinyi Odhiambo"
+    },
+    {
+      "name": "patient_ref",
+      "value": "PT-010",
+      "confidence": 0.99,
+      "bbox": [
+        0.419,
+        0.272,
+        0.508,
+        0.295
+      ],
+      "quote": "PT-010"
+    },
+    {
+      "name": "visit_type",
+      "value": "Inpatient",
+      "confidence": 0.99,
+      "bbox": [
+        0.419,
+        0.32,
+        0.53,
+        0.345
+      ],
+      "quote": "Inpatient"
+    },
+    {
+      "name": "admission_date",
+      "value": "2026-10-12",
+      "confidence": 0.99,
+      "bbox": [
+        0.419,
+        0.37,
+        0.575,
+        0.394
+      ],
+      "quote": "2026-10-12"
+    },
+    {
+      "name": "discharge_date",
+      "value": "2026-10-14",
+      "confidence": 0.99,
+      "bbox": [
+        0.419,
+        0.42,
+        0.573,
+        0.444
+      ],
+      "quote": "2026-10-14"
+    },
+    {
+      "name": "diagnosis",
+      "value": "Pneumonia, admitted for IV antibiotics",
+      "confidence": 0.98,
+      "bbox": [
+        0.419,
+        0.473,
+        0.892,
+        0.5
+      ],
+      "quote": "Pneumonia, admitted for IV antibiotics"
+    },
+    {
+      "name": "practitioner_name",
+      "value": "Dr. Amani Otieno",
+      "confidence": 0.99,
+      "bbox": [
+        0.419,
+        0.527,
+        0.631,
+        0.551
+      ],
+      "quote": "Dr. Amani Otieno"
+    },
+    {
+      "name": "practitioner_id",
+      "value": "PR-100",
+      "confidence": 0.99,
+      "bbox": [
+        0.419,
+        0.58,
+        0.508,
+        0.603
+      ],
+      "quote": "PR-100"
+    },
+    {
+      "name": "facility_id",
+      "value": "FAC-L2",
+      "confidence": 0.99,
+      "bbox": [
+        0.242,
+        0.11,
+        0.327,
+        0.128
+      ],
+      "quote": "FAC-L2"
+    }
+  ],
+  "signature_present": true,
+  "signature_bbox": [
+    0.418,
+    0.766,
+    0.808,
+    0.806
+  ],
+  "unreadable": []
+}

@@ -46,6 +46,7 @@ class ChatRequest(BaseModel):
 
     messages: list[ChatMessage] = PydanticField(min_length=1)
     case_id: str | None = None  # stub replay key; also used for tracing
+    json_output: bool = False  # ask the provider for a JSON object
 
 
 class ChatResponse(BaseModel):

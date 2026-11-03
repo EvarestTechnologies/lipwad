@@ -1,6 +1,7 @@
 """Model client layer: role resolution, partner fallback, stub replay, no network."""
 
 import hashlib
+import json
 import socket
 
 import httpx
@@ -317,3 +318,22 @@ def test_messages_can_carry_image_and_audio_parts() -> None:
 
 def test_missing_fixture_is_not_mistaken_for_a_missing_key() -> None:
     assert not issubclass(StubFixtureMissingError, LookupError)
+
+
+def test_json_output_requests_a_json_object() -> None:
+    seen: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.update(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{"message": {"content": "{}"}}]})
+
+    client = create_client(
+        Role.VISION,
+        env={"META_MODEL_API_KEY": META_KEY},
+        transport=httpx.MockTransport(handler),
+    )
+    client.complete(
+        ChatRequest(messages=[ChatMessage(role="user", content="hi")], json_output=True)
+    )
+
+    assert seen["response_format"] == {"type": "json_object"}
