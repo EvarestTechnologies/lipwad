@@ -24,6 +24,7 @@ RULES = {
     "SHA-PRACTITIONER-REGISTRY": "Flags a practitioner number the registry lookup does not find.",
     "SHA-FACILITY-LEVEL": f"Flags inpatient care at a facility below level {MIN_INPATIENT_LEVEL}.",
     "SHA-RESUBMISSION": "Flags a returned or rejected claim and its resubmission countdown.",
+    "SHA-DATES-CONSISTENT": "Flags a voice note admission date that differs from the form.",
     "TERM-PLACEHOLDER": "Marks a service code as a placeholder until terminology is registered.",
 }
 
@@ -66,6 +67,18 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
                 code="itemised_invoice_missing",
                 severity="amber",
                 citations=[*cite("invoice_itemised"), rule("SHA-DOC-INVOICE")],
+            )
+        )
+    spoken, written = fields.get("voice_admission_date"), fields.get("admission_date")
+    if spoken and written and spoken.value != written.value:
+        flags.append(
+            Flag(
+                code="admission_date_mismatch",
+                severity="amber",
+                citations=[
+                    *cite("admission_date", "voice_admission_date"),
+                    rule("SHA-DATES-CONSISTENT"),
+                ],
             )
         )
     bed_lines = [

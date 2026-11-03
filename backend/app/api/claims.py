@@ -19,6 +19,7 @@ ACTIONS = {
     "retake_required": "Retake the photo in better light",
     "resubmission_deadline_near": "Fix and resubmit before the window closes",
     "claim_rejected": "Review the rejection and resubmit",
+    "admission_date_mismatch": "Confirm the admission date with the ward and correct it",
 }
 
 TODAY_FEED = 8
@@ -103,12 +104,14 @@ def router(services: Services) -> APIRouter:
             return detail(session, claim_id)
 
     @api.get("/uploads/{upload_id}/image")
-    def image(upload_id: str) -> FileResponse:
+    @api.get("/uploads/{upload_id}/file")
+    def upload_file(upload_id: str) -> FileResponse:
         with services.sessions() as session:
             row = session.get(UploadRow, upload_id)
             if row is None:
                 raise HTTPException(status_code=404)
-            return FileResponse(row.path, media_type="image/png")
+            media = "audio/wav" if row.path.endswith(".wav") else "image/png"
+            return FileResponse(row.path, media_type=media)
 
     @api.get("/rules")
     def rules() -> list[dict]:

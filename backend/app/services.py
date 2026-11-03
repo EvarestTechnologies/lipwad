@@ -13,6 +13,7 @@ from app.db.tables import Base
 from app.hie.factory import create_hie
 from app.hie.mock import MockHIE
 from app.models import Role, create_client
+from app.models.transcribe import create_transcriber
 from app.tools.fixtures import load_fixtures
 
 
@@ -33,6 +34,9 @@ def build_services() -> Services:
     )
     fixtures = load_fixtures(DATA_DIR)
     agent = ClaimAgent(
-        create_client(Role.VISION, fixtures=fixtures), create_client(Role.REASONING), hie
+        create_client(Role.VISION, fixtures=fixtures),
+        create_client(Role.REASONING),
+        hie,
+        create_transcriber(fixtures=fixtures),
     )
     return Services(sessions=sessionmaker(engine), agent=agent, hie=hie, data_dir=DATA_DIR)

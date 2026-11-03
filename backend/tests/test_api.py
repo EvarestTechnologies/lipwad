@@ -12,6 +12,7 @@ from app.db.tables import Base
 from app.hie.mock import MockHIE
 from app.main import create_app
 from app.models import Role, StubProvider
+from app.models.transcribe import FixtureTranscriber
 from app.services import Services
 from app.tools.fixtures import load_fixtures
 from tests.test_agent import FakeReasoning
@@ -32,7 +33,10 @@ def client() -> TestClient:
     with sessions() as session:
         seed_claims(session, cases)
         session.commit()
-    agent = ClaimAgent(StubProvider(Role.VISION, load_fixtures(DATA_DIR)), FakeReasoning(), hie)
+    fixtures = load_fixtures(DATA_DIR)
+    agent = ClaimAgent(
+        StubProvider(Role.VISION, fixtures), FakeReasoning(), hie, FixtureTranscriber(fixtures)
+    )
     services = Services(sessions=sessions, agent=agent, hie=hie, data_dir=DATA_DIR)
     return TestClient(create_app(None, services))
 
@@ -147,3 +151,11 @@ def test_today_feed_is_short(client: TestClient) -> None:
         client.post(f"/api/claims/{case_id}/run")
 
     assert len(client.get("/api/today").json()["activity"]) == 8
+
+
+def test_voice_notes_are_served_as_audio(client: TestClient) -> None:
+    client.post("/api/claims/F06/run")
+    response = client.get("/api/uploads/F06-voice_note/file")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "audio/wav"
