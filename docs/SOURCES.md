@@ -27,3 +27,16 @@ Capture superseded versions too when a rule changed, with effective-from and eff
 | ID | Code system | Source | Version | Notes |
 |---|---|---|---|---|
 | TERM-01 | | | | |
+
+## Synthetic media
+| Asset | How it was made | Rights and notes |
+|---|---|---|
+| `data/synthetic/*/claim_form*.png`, `invoice.png` | Rendered from each case's `ground_truth.json` by `backend/scripts/make_documents.py` | Original work, watermarked "SYNTHETIC - DEMO ONLY". Names, facilities and practitioners are invented. |
+| `data/synthetic/F06/voice_note.wav` | Spoken by the macOS system voice "Tessa" from an original, invented script | Apple's licence allows system-voice output in personal, non-commercial projects; replace it with a team recording before any commercial use. |
+
+## Fonts and libraries
+| Asset | Source | Licence |
+|---|---|---|
+| Schibsted Grotesk, Martian Mono | Google Fonts | SIL Open Font License 1.1 |
+| Python and npm packages | `backend/pyproject.toml`, `frontend/package.json` | Each package's own open-source licence |
+
