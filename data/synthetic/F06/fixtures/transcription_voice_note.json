@@ -1,0 +1,20 @@
+{
+  "segments": [
+    {
+      "t_start": 0.0,
+      "t_end": 5.82,
+      "text": "Voice note for the claim of Musakeriuki, patient number PT009"
+    },
+    {
+      "t_start": 7.34,
+      "t_end": 16.86,
+      "text": "He came to the clinic on the 11th of October 2026 with fever and cough. The malaria test was negative."
+    },
+    {
+      "t_start": 18.38,
+      "t_end": 21.82,
+      "text": "He was treated as an outpatient and went home the same day."
+    }
+  ],
+  "model_id": "muse-voice-transcribe-1.0"
+}
