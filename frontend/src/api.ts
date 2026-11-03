@@ -36,6 +36,7 @@ export type Summary = {
   rescue: boolean;
 };
 export type Today = { at_risk_ksh: number; tasks: Summary[]; activity: Step[] };
+export type Rule = { id: string; checks: string; version: string; source_registered: boolean };
 export type Draft = { reason: string[]; changes: { field: string; before: string | null; after: string }[] };
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -56,6 +57,7 @@ const post = <T>(path: string, body?: unknown) =>
 export const api = {
   today: () => call<Today>("/today"),
   claims: () => call<Summary[]>("/claims"),
+  rules: () => call<Rule[]>("/rules"),
   claim: (id: string) => call<ClaimDetail>(`/claims/${id}`),
   run: (id: string) => post<ClaimDetail>(`/claims/${id}/run`),
   submit: (id: string, confirmedBy: string) =>
@@ -75,3 +77,32 @@ export function timeLeft(deadline: string | null): string | null {
   if (hours < 48) return `${hours} hours left to resubmit`;
   return `${Math.floor(hours / 24)} days left to resubmit`;
 }
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+export function display(name: string, value: string): string {
+  const v = value.replace(" [demo]", "");
+  if (name === "invoice_total" && /^\d+$/.test(v)) return ksh(Number(v));
+  if (name === "clinician_signature") return v === "present" ? "Signed" : "Not signed";
+  if (name === "invoice_itemised") return v === "yes" ? "Yes" : "No, total only";
+  if (DATE.test(v)) {
+    return new Date(`${v}T00:00:00`).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+  }
+  return v;
+}
+
+/** Splits a logged explanation into its English and Kiswahili parts. */
+export function explanation(text: string): { en: string; sw: string | null } {
+  const [en, sw] = text.split(" | SW: ");
+  return { en, sw: sw ?? null };
+}
+
+/** The first sentence of a feed step, for the short feed on Today. */
+export function headline(text: string): string {
+  const { en } = explanation(text);
+  const match = en.match(/^.*?[.!?](\s|$)/);
+  return (match ? match[0] : en).trim();
+}
+
+export const patientName = (name: string | null, reviewed: boolean) =>
+  name?.replace(" [demo]", "") ?? (reviewed ? "Name unreadable" : "Not read yet");

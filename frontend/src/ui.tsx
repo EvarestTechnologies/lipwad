@@ -1,4 +1,7 @@
+import type { ReactNode } from "react";
+
 import type { Claim } from "./api";
+import { navigate } from "./App";
 
 const STATUS = {
   green: { word: "Ready", icon: "✓", tone: "ready" },
@@ -35,3 +38,11 @@ export const REASON_TEXT: Record<string, string> = {
 
 export const NO_ADVICE =
   "Lipwad never submits a claim without your OK, and never gives clinical advice.";
+
+export function Link({ to, current, className, children }: { to: string; current?: boolean; className?: string; children: ReactNode }) {
+  return (
+    <a href={to} className={className} aria-current={current ? "page" : undefined} onClick={(e) => { e.preventDefault(); navigate(to); }}>
+      {children}
+    </a>
+  );
+}
