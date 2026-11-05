@@ -28,6 +28,14 @@ Capture superseded versions too when a rule changed, with effective-from and eff
 |---|---|---|---|---|
 | TERM-01 | | | | |
 
+## Problem data (cited in the pitch slides, video and submission)
+| ID | Title | Publisher | URL | Date | Used for | Terms |
+|---|---|---|---|---|---|---|
+| NEWS-01 | SHA report: Missing documents cause most claim rejections | The Star (Kenya) | https://www.the-star.co.ke/news/2026-02-13-sha-report-missing-documents-cause-most-claim-rejections | 13 Feb 2026 | 91,935 claims rejected for missing or incomplete documents; 23,000 for late resubmission (SHA report, Oct 2024 to Jan 2026) | Figures cited with attribution; no article text reproduced |
+| NEWS-02 | SHA rejects one in five claims from hospitals | The Star (Kenya) | https://www.the-star.co.ke/news/2026-07-04-sha-rejects-one-in-five-claims-from-hospitals | 4 Jul 2026 | About 1 in 5 county hospital claims unpaid; over KSh 8B of KSh 40.91B returned, awaiting documents or rejected (SHA statement, data to 30 Jun 2026) | Figures cited with attribution; no article text reproduced |
+
+These are news reports of SHA's own figures, not SHA rule documents, so they are never cited as rules.
+
 ## Synthetic media
 | Asset | How it was made | Rights and notes |
 |---|---|---|
