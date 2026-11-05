@@ -78,7 +78,8 @@ make deploy                 # build and deploy to Modal
 - **Rules are placeholders.** Rule IDs are cited with version `v[PLACEHOLDER]` until the SHA source documents are registered in `docs/SOURCES.md`. Lipwad never invents rule text.
 - **Mock HIE.** Submission and resubmission go to `MockHIE`, not the DHA sandbox.
 - **Voice notes are English only.** Kiswahili is not yet in Muse Voice Transcribe's language list.
-- **Not yet built:** SAM 3.1 segmentation, the Capture screen, rules retrieval over a registered SHA corpus, and terminology coding. Codes are placeholders.
+- **No in-app capture yet.** Taking photos and recording voice notes inside Lipwad (the Capture screen) is not built. The demo cases load synthetic photos and audio from `data/synthetic/`; everything after that, from reading to rescue, runs live.
+- **Not yet built:** SAM 3.1 segmentation, rules retrieval over a registered SHA corpus, and terminology coding. Codes are placeholders.
 - **Synthetic data only.** All documents are generated from ground truth by `backend/scripts/make_documents.py` and marked as synthetic.
 
 ## Credits
