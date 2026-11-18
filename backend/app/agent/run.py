@@ -6,6 +6,7 @@ never sets the status, so it cannot turn a blocked claim green.
 """
 
 import json
+import logging
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -46,6 +47,8 @@ from app.tools.listen import NoteInput, transcribe_note
 
 DOCUMENTS = ("claim_form", "invoice", "discharge_summary", "case_summary")
 VOICE_NOTE = "voice_note.wav"
+EXPLANATION_MISSING = "Explanation not available in this demo run."
+log = logging.getLogger(__name__)
 NOT_CODED = "not coded"  # no code is assigned until SHA's coding standard is confirmed
 
 EXPLAIN_PROMPT = (
@@ -258,7 +261,8 @@ class ClaimAgent:
             TypeError,
             AttributeError,
         ) as error:
-            self._log(session, claim.id, "decide", f"Explanation unavailable: {error}", None, [])
+            log.warning("explanation unavailable for %s: %s", claim.id, error)
+            self._log(session, claim.id, "decide", EXPLANATION_MISSING, None, [])
 
     def rescue(self, session: Session, case_id: str, upload: Upload) -> dict:
         """Re-read a corrected page and redo the checks. Only evidence changes the claim."""
@@ -269,7 +273,9 @@ class ClaimAgent:
             raise RescueError(f"{case_id} already has its corrected page")
         if claim.lifecycle is Lifecycle.DRAFT and claim.readiness is None:
             raise RescueError(f"Review {case_id} before adding a corrected page")
-        reasons = [flag.code for flag in claim.flags if flag.code not in SETTLEMENT_FLAGS]
+        reasons = [
+            f.code for f in claim.flags if f.code not in SETTLEMENT_FLAGS and f.severity != "note"
+        ]
         if upload.id not in {item.id for item in list_uploads(session, case_id)}:
             save_upload(session, upload)
         result = extract_document(
@@ -328,7 +334,9 @@ class ClaimAgent:
             for field in claim.fields
             if any(citation.source_id == signed for citation in field.citations)
         ]
-        blocking = [flag.code for flag in claim.flags if flag.code not in SETTLEMENT_FLAGS]
+        blocking = [
+            f.code for f in claim.flags if f.code not in SETTLEMENT_FLAGS and f.severity != "note"
+        ]
         if not corrections or blocking:
             raise RescueError(f"{case_id} has no drafted fix or is still blocked: {blocking}")
         self._audit_confirmed(session, claim, confirmation)

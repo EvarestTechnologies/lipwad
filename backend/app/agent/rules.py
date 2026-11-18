@@ -33,6 +33,8 @@ class Source:
     clause: str
     quote: str
     checks: str
+    # "verbatim" text is copied word for word; a "summary" is shown without quotation marks.
+    quote_kind: Literal["verbatim", "summary"] = "verbatim"
 
 
 _PART_A = dict(
@@ -78,7 +80,8 @@ RULES: dict[str, Source] = {
         "treatment sheet and medication chart, investigation requests and results, operation "
         "notes where a procedure was performed, and referral documents where applicable.",
         checks="Flags a missing required document, or an invoice that shows a total without "
-        "separate priced lines.",
+        "separate priced lines. Notes invoice lines with no tariff code, without suggesting "
+        "one.",
     ),
     "SHA-A-13.4.3-LICENSED": Source(
         **_PART_A,
@@ -124,17 +127,26 @@ RULES: dict[str, Source] = {
         "processing of the claim.",
         checks="Shows the submission deadline, seven days after discharge.",
     ),
+    "SHI-REG-58-FORM3": Source(
+        **_LN_49,
+        clause="reg. 58(4)",
+        quote="The claim under subregulation (1) shall be made in Form 3 set out in the First "
+        "Schedule to these Regulations",
+        checks="Flags a claim with no claim form on file.",
+    ),
     "SHI-FORM3-FIELDS": Source(
         **_LN_49,
         clause="First Schedule, Form 3",
         quote="All fields in this form are mandatory. Incomplete forms will not be processed.",
-        checks="Flags a claim form read as having no clinician signature.",
+        checks="Flags a claim form missing the rendering physician's name and registration "
+        "number, the hospital declaration signature, or the facility stamp.",
     ),
     "SHI-SCHED-INPATIENT-LEVEL": Source(
         **_LN_49,
         clause="Second and Third Schedules",
-        quote='Primary Healthcare Fund inpatient point of access "Level 2-4". Social Health '
-        'Insurance Fund inpatient point of access "Level 4 - 6".',
+        quote="The Primary Healthcare Fund gives inpatient care at Level 2-4, and the Social "
+        "Health Insurance Fund at Level 4 - 6.",
+        quote_kind="summary",
         checks="Registered for the fund and facility-level checks planned in Phase 2. Nothing "
         "is flagged against it yet.",
     ),
@@ -179,10 +191,9 @@ RULES: dict[str, Source] = {
         status="lipwad",
         url="",
         clause="",
-        quote="Lipwad does not assign service or diagnosis codes yet. SHA's coding standard "
-        "is not confirmed, so every claim shows its service as not coded. This is Lipwad's "
-        "own note, not an SHA rule.",
-        checks="Marks the service as not coded until coding is built in Phase 2.",
+        quote="Lipwad does not check service or diagnosis codes yet. It never assigns or "
+        "suggests codes.",
+        checks="Shows the service as not coded. This is Lipwad's own note, not an SHA rule.",
     ),
 }
 
@@ -191,7 +202,8 @@ def rule(rule_id: str) -> Citation:
     if rule_id not in RULES:
         raise KeyError(f"{rule_id} is not in the rules catalogue")
     source = RULES[rule_id]
-    return Citation(kind="rule", source_id=rule_id, rule_version=source.version, quote=source.quote)
+    quote = source.quote if source.quote_kind == "verbatim" else None  # never quote a summary
+    return Citation(kind="rule", source_id=rule_id, rule_version=source.version, quote=quote)
 
 
 @dataclass
@@ -237,7 +249,7 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
                 Flag(
                     code=gap.code,
                     severity="amber",
-                    citations=[rule("SHA-A-13.3.1-SUPPORTING-DOCS"), rule("SHA-NEWS-3-DOCS")],
+                    citations=[rule(gap.rule_id), rule("SHA-NEWS-3-DOCS")],
                 )
             )
     signature = fields.get("discharge_summary_signature")
@@ -261,12 +273,27 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
                 citations=[*evidence.voice_review, rule("LIPWAD-EVIDENCE-QUALITY")],
             )
         )
-    if fields.get("clinician_signature") and fields["clinician_signature"].value == "absent":
+    for name, code in (
+        ("physician_details", "physician_details_missing"),
+        ("declaration_signature", "declaration_unsigned"),
+        ("facility_stamp", "facility_stamp_missing"),
+    ):
+        if fields.get(name) and fields[name].value == "absent":
+            flags.append(
+                Flag(
+                    code=code,
+                    severity="amber",
+                    citations=[*cite(name), rule("SHI-FORM3-FIELDS")],
+                )
+            )
+    tariff = fields.get("invoice_tariff_codes")
+    if tariff and tariff.value != "all":
+        # A note, not a block: Lipwad does not check codes yet and never suggests one.
         flags.append(
             Flag(
-                code="signature_missing",
-                severity="amber",
-                citations=[*cite("clinician_signature"), rule("SHI-FORM3-FIELDS")],
+                code="tariff_code_missing",
+                severity="note",
+                citations=[*cite("invoice_tariff_codes"), rule("SHA-A-13.3.1-SUPPORTING-DOCS")],
             )
         )
     if fields.get("invoice_itemised") and fields["invoice_itemised"].value == "no":

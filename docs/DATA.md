@@ -19,11 +19,11 @@ Stored under `data/synthetic/<case_id>/` with `ground_truth.json`.
 | C02 | Clean inpatient admission, full docs | Level 4 | Green | — |
 | C03 | Clean maternity (normal delivery) | Level 4 | Green | — |
 | C04 | Clean inpatient admission with a signed discharge summary | Level 4 | Green | — |
-| F01 | Discharge summary unsigned | Level 4 | Amber | Missing clinician signature (page/region cited) |
+| F01 | Hospital declaration on the claim form unsigned | Level 4 | Amber | Form 3 field missing (LN 49, region cited) |
 | F02 | Invoice not itemised | Level 4 | Amber | Itemised invoice required |
 | F03 | Outpatient visit billed as inpatient | Level 3 | Red | Service type inconsistent with documents |
 | F04 | Practitioner not found in registry | Level 4 | Red | Practitioner validation failed |
-| F05 | Sent back claim, day 13 of 14 | Level 4 | Amber + countdown | Rescue flow, one day left (SHA Part A 13.5.2) |
+| F05 | Sent back claim (hospital declaration unsigned), day 13 of 14 | Level 4 | Amber + countdown | Rescue flow, one day left (SHA Part A 13.5.2) |
 | F06 | Dates disagree across documents | Level 3 | Amber | Admission date mismatch (both sources cited) |
 | F07 | Inpatient care at a Level 2 facility | Level 2 | Green | Retired: LN 49 covers inpatient care at Level 2-4 under the Primary Healthcare Fund. Fund checks wait for Phase 2. |
 | F08 | Blurry photo, key field unreadable | Level 3 | Amber | Retake requested, no guessing |

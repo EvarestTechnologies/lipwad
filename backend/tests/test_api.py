@@ -51,7 +51,8 @@ def test_running_the_agent_returns_the_reviewed_claim(client: TestClient) -> Non
     body = client.post("/api/claims/F01/run").json()
 
     assert body["claim"]["readiness"] == "amber"
-    assert [flag["code"] for flag in body["claim"]["flags"]] == ["signature_missing"]
+    flags = {flag["code"]: flag["severity"] for flag in body["claim"]["flags"]}
+    assert flags == {"declaration_unsigned": "amber", "tariff_code_missing": "note"}
     assert body["activity"]
     assert {upload["id"] for upload in body["uploads"]} == {
         "F01-claim_form",
@@ -101,9 +102,9 @@ def test_rescue_drafts_the_fix_from_the_signed_page(client: TestClient) -> None:
     draft = client.post("/api/claims/F05/rescue").json()
 
     assert draft["changes"] == [
-        {"field": "clinician_signature", "before": "absent", "after": "present"}
+        {"field": "declaration_signature", "before": "absent", "after": "present"}
     ]
-    assert draft["reason"] == ["signature_missing"]
+    assert draft["reason"] == ["declaration_unsigned"]
 
 
 def test_rescued_claim_is_resubmitted_and_accepted(client: TestClient) -> None:
@@ -113,7 +114,7 @@ def test_rescued_claim_is_resubmitted_and_accepted(client: TestClient) -> None:
     body = client.post("/api/claims/F05/resubmit", json=CONFIRM).json()
 
     assert body["claim"]["lifecycle"] == "submitted"
-    assert "signature_missing" not in [flag["code"] for flag in body["claim"]["flags"]]
+    assert "declaration_unsigned" not in [flag["code"] for flag in body["claim"]["flags"]]
 
 
 def test_resubmit_without_a_drafted_fix_is_refused(client: TestClient) -> None:
@@ -243,7 +244,7 @@ def test_a_draft_can_take_its_corrected_page_and_then_be_submitted(client: TestC
     claim = client.get("/api/claims/F01").json()["claim"]
 
     assert draft["changes"] == [
-        {"field": "clinician_signature", "before": "absent", "after": "present"}
+        {"field": "declaration_signature", "before": "absent", "after": "present"}
     ]
     assert claim["readiness"] == "green"
     assert client.post("/api/claims/F01/submit", json=CONFIRM).status_code == 200
@@ -287,7 +288,7 @@ def test_a_corrected_draft_can_be_reviewed_again_with_its_signed_page(client: Te
 
     assert response.status_code == 200
     assert claim["readiness"] == "green"
-    signature = next(f for f in claim["fields"] if f["name"] == "clinician_signature")
+    signature = next(f for f in claim["fields"] if f["name"] == "declaration_signature")
     assert signature["citations"][0]["source_id"] == "F01-claim_form_signed"
 
 

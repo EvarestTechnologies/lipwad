@@ -37,7 +37,7 @@ Running the agent live on real models, every demo case reaches its expected stat
 | Case | Scenario | Result |
 |---|---|---|
 | C01–C04 | Clean outpatient, inpatient and maternity claims | Green |
-| F01 | Claim form unsigned | Amber · signature missing |
+| F01 | Hospital declaration on the claim form unsigned | Amber · Form 3 field missing (LN 49) |
 | F02 | Invoice not itemised | Amber · itemised invoice missing |
 | F03 | Outpatient visit billed with inpatient bed days | Red · service type inconsistent |
 | F04 | Practitioner not in registry | Red · practitioner not found |

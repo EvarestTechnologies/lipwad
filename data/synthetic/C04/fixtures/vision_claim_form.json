@@ -5,34 +5,34 @@
       "value": "Amina Chepkoech",
       "confidence": 0.99,
       "bbox": [
-        0.418,
-        0.226,
-        0.65,
-        0.249
+        0.417,
+        0.224,
+        0.662,
+        0.245
       ],
       "quote": "Amina Chepkoech"
     },
     {
       "name": "patient_ref",
-      "value": "PT-004",
+      "value": "PT-013",
       "confidence": 0.99,
       "bbox": [
-        0.42,
-        0.28,
-        0.508,
-        0.301
+        0.417,
+        0.278,
+        0.52,
+        0.297
       ],
-      "quote": "PT-004"
+      "quote": "PT-013"
     },
     {
       "name": "visit_type",
       "value": "Inpatient",
       "confidence": 0.99,
       "bbox": [
-        0.42,
-        0.33,
-        0.528,
-        0.356
+        0.417,
+        0.331,
+        0.532,
+        0.353
       ],
       "quote": "Inpatient"
     },
@@ -41,10 +41,10 @@
       "value": "2026-10-18",
       "confidence": 0.99,
       "bbox": [
-        0.419,
-        0.379,
-        0.564,
-        0.401
+        0.417,
+        0.381,
+        0.562,
+        0.402
       ],
       "quote": "2026-10-18"
     },
@@ -53,22 +53,22 @@
       "value": "2026-10-20",
       "confidence": 0.99,
       "bbox": [
-        0.419,
-        0.426,
-        0.565,
-        0.447
+        0.417,
+        0.433,
+        0.563,
+        0.454
       ],
       "quote": "2026-10-20"
     },
     {
       "name": "diagnosis",
       "value": "Gastroenteritis, admitted for IV fluids",
-      "confidence": 0.98,
+      "confidence": 0.99,
       "bbox": [
-        0.419,
-        0.482,
+        0.417,
+        0.489,
         0.87,
-        0.51
+        0.511
       ],
       "quote": "Gastroenteritis, admitted for IV fluids"
     },
@@ -77,9 +77,9 @@
       "value": "Dr. Amani Otieno",
       "confidence": 0.99,
       "bbox": [
-        0.42,
-        0.539,
-        0.63,
+        0.417,
+        0.544,
+        0.632,
         0.564
       ],
       "quote": "Dr. Amani Otieno"
@@ -89,32 +89,39 @@
       "value": "PR-100",
       "confidence": 0.99,
       "bbox": [
-        0.42,
-        0.587,
-        0.508,
-        0.609
+        0.417,
+        0.597,
+        0.51,
+        0.617
       ],
       "quote": "PR-100"
     },
     {
       "name": "facility_id",
       "value": "FAC-L4",
-      "confidence": 0.98,
+      "confidence": 0.99,
       "bbox": [
-        0.24,
-        0.113,
-        0.328,
-        0.131
+        0.235,
+        0.11,
+        0.305,
+        0.127
       ],
       "quote": "FAC-L4"
     }
   ],
-  "signature_present": true,
-  "signature_bbox": [
-    0.418,
-    0.766,
-    0.808,
-    0.812
+  "declaration_signed": true,
+  "declaration_bbox": [
+    0.203,
+    0.763,
+    0.567,
+    0.801
+  ],
+  "stamp_present": true,
+  "stamp_bbox": [
+    0.644,
+    0.75,
+    0.882,
+    0.866
   ],
   "unreadable": []
 }

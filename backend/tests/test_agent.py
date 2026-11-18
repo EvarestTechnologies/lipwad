@@ -73,7 +73,7 @@ def test_every_flag_and_field_is_cited(case_id: str) -> None:
 
 def test_rule_flags_cite_a_rule_and_its_version() -> None:
     claim, _, _ = run("F01")
-    flag = next(flag for flag in claim.flags if flag.code == "signature_missing")
+    flag = next(flag for flag in claim.flags if flag.code == "declaration_unsigned")
 
     assert any(c.kind == "rule" and c.rule_version for c in flag.citations)
     assert any(c.kind == "image" for c in flag.citations)
@@ -135,7 +135,7 @@ def test_rescue_only_replaces_fields_that_changed() -> None:
         for field in claim.fields
         if any(c.source_id == "F05-claim_form_signed" for c in field.citations)
     ]
-    assert signed == ["clinician_signature"]
+    assert signed == ["declaration_signature"]
 
 
 def test_activity_names_the_model_that_did_the_work() -> None:

@@ -5,10 +5,10 @@
       "value": "Halima Abdi",
       "confidence": 0.99,
       "bbox": [
-        0.42,
-        0.206,
-        0.58,
-        0.231
+        410,
+        216,
+        556,
+        236
       ],
       "quote": "Halima Abdi"
     },
@@ -17,10 +17,10 @@
       "value": "PT-007",
       "confidence": 0.99,
       "bbox": [
-        0.42,
-        0.263,
-        0.51,
-        0.286
+        410,
+        261,
+        496,
+        281
       ],
       "quote": "PT-007"
     },
@@ -29,10 +29,10 @@
       "value": "Inpatient",
       "confidence": 0.99,
       "bbox": [
-        0.42,
-        0.316,
-        0.54,
-        0.34
+        410,
+        313,
+        517,
+        336
       ],
       "quote": "Inpatient"
     },
@@ -41,10 +41,10 @@
       "value": "2026-10-12",
       "confidence": 0.99,
       "bbox": [
-        0.42,
-        0.369,
-        0.561,
-        0.394
+        410,
+        367,
+        551,
+        388
       ],
       "quote": "2026-10-12"
     },
@@ -53,22 +53,22 @@
       "value": "2026-10-14",
       "confidence": 0.99,
       "bbox": [
-        0.42,
-        0.422,
-        0.561,
-        0.444
+        410,
+        418,
+        551,
+        438
       ],
       "quote": "2026-10-14"
     },
     {
       "name": "diagnosis",
       "value": "Pneumonia, admitted for IV antibiotics",
-      "confidence": 0.99,
+      "confidence": 0.98,
       "bbox": [
-        0.42,
-        0.474,
-        0.891,
-        0.496
+        410,
+        472,
+        870,
+        495
       ],
       "quote": "Pneumonia, admitted for IV antibiotics"
     },
@@ -77,10 +77,10 @@
       "value": "Dr. Amani Otieno",
       "confidence": 0.99,
       "bbox": [
-        0.42,
-        0.529,
-        0.632,
-        0.55
+        410,
+        527,
+        616,
+        548
       ],
       "quote": "Dr. Amani Otieno"
     },
@@ -89,32 +89,39 @@
       "value": "PR-404",
       "confidence": 0.99,
       "bbox": [
-        0.42,
-        0.581,
-        0.51,
-        0.604
+        410,
+        580,
+        497,
+        600
       ],
       "quote": "PR-404"
     },
     {
       "name": "facility_id",
       "value": "FAC-L4",
-      "confidence": 0.99,
+      "confidence": 0.98,
       "bbox": [
-        0.24,
-        0.11,
-        0.332,
-        0.129
+        241,
+        109,
+        320,
+        127
       ],
       "quote": "FAC-L4"
     }
   ],
-  "signature_present": true,
-  "signature_bbox": [
-    0.42,
-    0.768,
-    0.81,
-    0.802
+  "declaration_signed": true,
+  "declaration_bbox": [
+    204,
+    751,
+    553,
+    796
+  ],
+  "stamp_present": true,
+  "stamp_bbox": [
+    651,
+    749,
+    876,
+    863
   ],
   "unreadable": []
 }

@@ -31,3 +31,8 @@ def test_uploaded_files_map_to_hie_document_types() -> None:
     files = ["claim_form.png", "invoice.png", "voice_note.wav", "claim_form_signed.png"]
 
     assert present_types(files) == {"CLAIM_FORM", "INVOICE"}
+
+
+def test_a_missing_claim_form_cites_regulation_58_not_the_contract_list() -> None:
+    assert BASELINE[0].rule_id == "SHI-REG-58-FORM3"
+    assert {r.rule_id for r in BASELINE[1:]} == {"SHA-A-13.3.1-SUPPORTING-DOCS"}

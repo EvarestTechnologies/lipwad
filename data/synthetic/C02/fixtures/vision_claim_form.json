@@ -5,10 +5,10 @@
       "value": "Baraka Mwangi",
       "confidence": 0.99,
       "bbox": [
-        0.418,
-        0.212,
-        0.614,
-        0.233
+        0.42,
+        0.225,
+        0.615,
+        0.247
       ],
       "quote": "Baraka Mwangi"
     },
@@ -17,10 +17,10 @@
       "value": "PT-002",
       "confidence": 0.99,
       "bbox": [
-        0.418,
-        0.264,
-        0.507,
-        0.285
+        0.42,
+        0.275,
+        0.51,
+        0.298
       ],
       "quote": "PT-002"
     },
@@ -29,10 +29,10 @@
       "value": "Inpatient",
       "confidence": 0.99,
       "bbox": [
-        0.418,
-        0.319,
-        0.528,
-        0.34
+        0.42,
+        0.324,
+        0.53,
+        0.348
       ],
       "quote": "Inpatient"
     },
@@ -41,10 +41,10 @@
       "value": "2026-10-12",
       "confidence": 0.99,
       "bbox": [
-        0.418,
-        0.371,
-        0.565,
-        0.391
+        0.42,
+        0.373,
+        0.563,
+        0.396
       ],
       "quote": "2026-10-12"
     },
@@ -53,10 +53,10 @@
       "value": "2026-10-14",
       "confidence": 0.99,
       "bbox": [
-        0.418,
-        0.423,
-        0.565,
-        0.443
+        0.42,
+        0.422,
+        0.563,
+        0.445
       ],
       "quote": "2026-10-14"
     },
@@ -65,22 +65,22 @@
       "value": "Pneumonia, admitted for IV antibiotics",
       "confidence": 0.98,
       "bbox": [
-        0.418,
-        0.476,
-        0.865,
-        0.498
+        0.42,
+        0.49,
+        0.868,
+        0.512
       ],
       "quote": "Pneumonia, admitted for IV antibiotics"
     },
     {
       "name": "practitioner_name",
       "value": "Dr. Amani Otieno",
-      "confidence": 0.99,
+      "confidence": 0.98,
       "bbox": [
-        0.418,
-        0.53,
-        0.609,
-        0.55
+        0.42,
+        0.538,
+        0.63,
+        0.562
       ],
       "quote": "Dr. Amani Otieno"
     },
@@ -89,32 +89,39 @@
       "value": "PR-100",
       "confidence": 0.99,
       "bbox": [
-        0.418,
-        0.584,
+        0.42,
+        0.587,
         0.508,
-        0.604
+        0.61
       ],
       "quote": "PR-100"
     },
     {
       "name": "facility_id",
       "value": "FAC-L4",
-      "confidence": 0.99,
+      "confidence": 0.98,
       "bbox": [
-        0.243,
-        0.109,
-        0.325,
-        0.127
+        0.244,
+        0.11,
+        0.328,
+        0.129
       ],
       "quote": "FAC-L4"
     }
   ],
-  "signature_present": true,
-  "signature_bbox": [
-    0.418,
-    0.76,
-    0.807,
-    0.797
+  "declaration_signed": true,
+  "declaration_bbox": [
+    0.207,
+    0.762,
+    0.566,
+    0.798
+  ],
+  "stamp_present": true,
+  "stamp_bbox": [
+    0.644,
+    0.75,
+    0.873,
+    0.863
   ],
   "unreadable": []
 }

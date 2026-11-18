@@ -69,11 +69,58 @@ def test_facility_level_is_not_checked_until_fund_rules_are_built() -> None:
     assert "service_outside_facility_level" not in codes(visit_type="Inpatient")
 
 
-def test_unsigned_claim_form_cites_form_3() -> None:
-    flag = flags_for(clinician_signature="absent")[0]
+@pytest.mark.parametrize(
+    ("field_name", "code"),
+    [
+        ("physician_details", "physician_details_missing"),
+        ("declaration_signature", "declaration_unsigned"),
+        ("facility_stamp", "facility_stamp_missing"),
+    ],
+)
+def test_each_missing_form_3_item_cites_form_3(field_name: str, code: str) -> None:
+    flag = flags_for(**{field_name: "absent"})[0]
 
-    assert flag.code == "signature_missing"
+    assert flag.code == code and flag.severity == "amber"
     assert rules_cited(flag) == {"SHI-FORM3-FIELDS"}
+
+
+def test_form_3_is_not_cited_for_a_clinician_signature() -> None:
+    assert flags_for(clinician_signature="absent") == []
+
+
+def test_invoice_lines_without_tariff_codes_are_a_note_not_a_block() -> None:
+    flag = flags_for(invoice_tariff_codes="none")[0]
+
+    assert (flag.code, flag.severity) == ("tariff_code_missing", "note")
+    assert rules_cited(flag) == {"SHA-A-13.3.1-SUPPORTING-DOCS"}
+    assert "tariff_code_missing" not in codes(invoice_tariff_codes="all")
+
+
+def test_a_note_does_not_stop_a_claim_from_going_green() -> None:
+    from app.db.schemas import Flag
+
+    claim = Claim(
+        id="X",
+        fields=[field("patient_ref", "PT-1")],
+        coded_lines=[field("service_code", "not coded")],
+        flags=[Flag(code="tariff_code_missing", severity="note", citations=CITE)],
+    )
+    assert claim.can_be_green
+
+
+def test_the_schedule_entry_is_marked_as_a_summary_not_a_quote() -> None:
+    assert RULES["SHI-SCHED-INPATIENT-LEVEL"].quote_kind == "summary"
+    assert all(
+        source.quote_kind == "verbatim"
+        for rule_id, source in RULES.items()
+        if rule_id != "SHI-SCHED-INPATIENT-LEVEL"
+    )
+
+
+def test_the_coding_note_never_promises_to_assign_codes() -> None:
+    assert RULES["LIPWAD-CODING-PENDING"].quote == (
+        "Lipwad does not check service or diagnosis codes yet. It never assigns or suggests codes."
+    )
 
 
 def test_invoice_without_items_cites_supporting_documents() -> None:

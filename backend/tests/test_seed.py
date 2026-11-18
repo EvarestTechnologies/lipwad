@@ -41,7 +41,7 @@ def test_expected_statuses_match_the_data_spec() -> None:
     cases = {case.case_id: case for case in load_cases(DATA_DIR)}
 
     assert cases["C01"].expected_status == "green"
-    assert cases["F01"].expected_reasons == ["signature_missing"]
+    assert cases["F01"].expected_reasons == ["declaration_unsigned"]
     assert cases["F02"].expected_reasons == ["itemised_invoice_missing"]
     assert cases["F03"].expected_status == "red"
     assert cases["F04"].expected_status == "red"
@@ -122,7 +122,7 @@ def test_seeded_submissions_are_known_to_the_mock() -> None:
     register_submissions(hie, cases)
 
     assert hie.get_claim_status("HIE-F05").outcome is Adjudication.RETURN
-    assert hie.get_claim_status("HIE-F05").error == ["signature_missing"]
+    assert hie.get_claim_status("HIE-F05").error == ["declaration_unsigned"]
     assert hie.get_claim_status("HIE-F09").outcome is Adjudication.REJECT
 
 
@@ -171,7 +171,7 @@ def test_seed_database_gives_the_mock_the_rescue_history(tmp_path: Path) -> None
     seed_database(url, state)
 
     hie = MockHIE(script=mock_script(load_cases(DATA_DIR)), state_path=state)
-    assert hie.get_claim_status("HIE-F05").error == ["signature_missing"]
+    assert hie.get_claim_status("HIE-F05").error == ["declaration_unsigned"]
     db = create_engine(url)
     with Session(db) as session:
         assert load_claim(session, "F05").resubmission_deadline is not None

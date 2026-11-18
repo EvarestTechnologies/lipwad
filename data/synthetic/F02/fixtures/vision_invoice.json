@@ -4,20 +4,21 @@
       "description": "Medical services",
       "amount": 14500,
       "bbox": [
-        63,
-        267,
-        870,
-        292
-      ]
+        60,
+        255,
+        875,
+        280
+      ],
+      "has_tariff_code": false
     }
   ],
   "total": {
     "amount": 14500,
     "bbox": [
-      731,
-      344,
-      883,
-      367
+      60,
+      325,
+      885,
+      350
     ]
   },
   "itemised": false,

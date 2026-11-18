@@ -87,7 +87,8 @@ class Field(BaseModel):
 
 class Flag(BaseModel):
     code: str
-    severity: Literal["amber", "red"]
+    # A note is shown and cited but does not stop a claim from going green.
+    severity: Literal["amber", "red", "note"]
     citations: list[Citation] = PydanticField(default_factory=list)
 
 
@@ -120,7 +121,8 @@ class Claim(BaseModel):
     @property
     def can_be_green(self) -> bool:
         has_evidence = bool(self.fields and self.coded_lines)
-        return has_evidence and not self.uncited_field_names and not self.flags
+        blocking = [flag for flag in self.flags if flag.severity != "note"]
+        return has_evidence and not self.uncited_field_names and not blocking
 
     @computed_field
     @property

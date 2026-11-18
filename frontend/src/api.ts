@@ -8,7 +8,7 @@ export type Citation = {
   quote: string | null;
 };
 export type Field = { name: string; value: string; confidence: number; citations: Citation[] };
-export type Flag = { code: string; severity: "amber" | "red"; citations: Citation[] };
+export type Flag = { code: string; severity: "amber" | "red" | "note"; citations: Citation[] };
 export type Claim = {
   id: string;
   lifecycle: string;
@@ -47,6 +47,7 @@ export type Rule = {
   clause: string;
   quote: string;
   checks: string;
+  quote_kind: "verbatim" | "summary";
 };
 export type AuditEvent = { at: string; actor: string; action: string; detail: Record<string, unknown> };
 export type Audit = { claim_id: string; exported_at: string; events: AuditEvent[] };
@@ -99,7 +100,10 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 export function display(name: string, value: string): string {
   const v = value.replace(" [demo]", "");
   if (name === "invoice_total" && /^\d+$/.test(v)) return ksh(Number(v));
-  if (name === "clinician_signature" || name === "discharge_summary_signature") return v === "present" ? "Signed" : "Not signed";
+  if (name === "declaration_signature" || name === "discharge_summary_signature") return v === "present" ? "Signed" : "Not signed";
+  if (name === "facility_stamp") return v === "present" ? "Stamped" : "No stamp";
+  if (name === "physician_details") return v === "present" ? "Name and registration no. given" : "Missing";
+  if (name === "invoice_tariff_codes") return { all: "On every line", some: "On some lines", none: "None printed" }[v] ?? v;
   if (name === "invoice_itemised") return v === "yes" ? "Yes" : "No, total only";
   if (DATE.test(v)) {
     return new Date(`${v}T00:00:00`).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });

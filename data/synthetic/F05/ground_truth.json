@@ -19,7 +19,7 @@
   "codes": [],
   "mock_hie_outcome": "return",
   "mock_hie_reasons": [
-    "signature_missing"
+    "declaration_unsigned"
   ],
   "days_since_outcome": 13,
   "practitioner_registered": true,

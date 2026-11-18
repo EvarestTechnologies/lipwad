@@ -27,10 +27,11 @@ class Requirement:
     label: str
     any_of: tuple[str, ...]
     code: str
+    rule_id: str = "SHA-A-13.3.1-SUPPORTING-DOCS"
 
 
 BASELINE = (
-    Requirement("claim form", ("CLAIM_FORM",), "claim_form_missing"),
+    Requirement("claim form", ("CLAIM_FORM",), "claim_form_missing", "SHI-REG-58-FORM3"),
     Requirement("itemised invoice or final bill", ("INVOICE", "FINAL_BILL"), "invoice_missing"),
     Requirement(
         "discharge or case summary",

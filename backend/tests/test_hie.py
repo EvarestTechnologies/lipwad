@@ -18,7 +18,7 @@ from app.hie.mock import MockHIE, MockScript, ScriptedOutcome
 
 NOW = datetime(2026, 10, 20, 9, 0, tzinfo=UTC)
 CONFIRMED = Confirmation(confirmed_by="clerk [demo]", confirmed_at=NOW)
-RETURNED = ScriptedOutcome(outcome=Adjudication.RETURN, reasons=["signature_missing"])
+RETURNED = ScriptedOutcome(outcome=Adjudication.RETURN, reasons=["declaration_unsigned"])
 
 
 def script(**outcomes: ScriptedOutcome) -> MockScript:
@@ -80,7 +80,7 @@ def test_submission_requires_a_named_confirmer() -> None:
 
 @pytest.mark.parametrize("outcome", [Adjudication.RETURN, Adjudication.REJECT])
 def test_scripted_outcome_carries_all_reasons(outcome: Adjudication) -> None:
-    reasons = ["itemised_invoice_missing", "signature_missing"]
+    reasons = ["itemised_invoice_missing", "declaration_unsigned"]
     system = hie(F09=ScriptedOutcome(outcome=outcome, reasons=reasons))
 
     assert system.submit_claim(Claim(id="F09"), CONFIRMED).error == reasons
@@ -148,7 +148,7 @@ def test_edit_accepts_the_claim_and_records_the_patch() -> None:
 
 
 def test_failed_repair_can_be_scripted() -> None:
-    still_returned = ScriptedOutcome(outcome=Adjudication.RETURN, reasons=["signature_missing"])
+    still_returned = ScriptedOutcome(outcome=Adjudication.RETURN, reasons=["declaration_unsigned"])
     system = hie(F09=RETURNED.model_copy(update={"after_edit": still_returned}))
     submitted = system.submit_claim(Claim(id="F09"), CONFIRMED)
 

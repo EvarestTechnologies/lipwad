@@ -5,49 +5,53 @@
       "amount": 6000,
       "bbox": [
         60,
-        214,
-        875,
-        238
-      ]
+        252,
+        856,
+        277
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "IV fluids",
       "amount": 2800,
       "bbox": [
-        60,
-        262,
-        875,
-        285
-      ]
+        61,
+        303,
+        857,
+        327
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Stool microscopy",
       "amount": 900,
       "bbox": [
-        60,
-        308,
-        875,
-        333
-      ]
+        61,
+        353,
+        855,
+        380
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Consultation",
       "amount": 1500,
       "bbox": [
-        60,
-        357,
-        875,
-        380
-      ]
+        62,
+        401,
+        856,
+        427
+      ],
+      "has_tariff_code": false
     }
   ],
   "total": {
     "amount": 11200,
     "bbox": [
       60,
-      426,
-      875,
-      452
+      462,
+      889,
+      495
     ]
   },
   "itemised": true,

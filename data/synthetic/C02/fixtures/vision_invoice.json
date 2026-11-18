@@ -4,50 +4,54 @@
       "description": "Bed days x2",
       "amount": 6000,
       "bbox": [
-        63,
-        267,
-        855,
-        295
-      ]
+        60,
+        260,
+        880,
+        285
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "IV antibiotics",
       "amount": 4500,
       "bbox": [
-        63,
-        322,
-        855,
-        348
-      ]
+        60,
+        315,
+        880,
+        340
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Chest X-ray",
       "amount": 2500,
       "bbox": [
-        63,
-        369,
-        855,
-        397
-      ]
+        60,
+        365,
+        880,
+        390
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Consultation",
       "amount": 1500,
       "bbox": [
-        63,
-        416,
-        855,
-        443
-      ]
+        60,
+        415,
+        880,
+        440
+      ],
+      "has_tariff_code": false
     }
   ],
   "total": {
     "amount": 14500,
     "bbox": [
-      62,
-      480,
-      865,
-      503
+      60,
+      490,
+      890,
+      525
     ]
   },
   "itemised": true,

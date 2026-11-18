@@ -4,39 +4,42 @@
       "description": "Consultation",
       "amount": 1000,
       "bbox": [
-        728,
-        271,
-        853,
-        293
-      ]
+        62,
+        267,
+        856,
+        288
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Malaria test",
       "amount": 800,
       "bbox": [
-        728,
-        317,
-        808,
-        338
-      ]
+        62,
+        310,
+        836,
+        332
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Medication",
       "amount": 700,
       "bbox": [
-        728,
-        363,
-        808,
-        385
-      ]
+        62,
+        353,
+        836,
+        375
+      ],
+      "has_tariff_code": false
     }
   ],
   "total": {
     "amount": 2500,
     "bbox": [
-      728,
-      430,
-      867,
+      62,
+      431,
+      870,
       454
     ]
   },

@@ -50,10 +50,11 @@ def test_a_review_records_each_file_value_and_flag_with_its_source() -> None:
     read = next(e for e in events if e["action"] == "file_read")
     assert read["detail"]["file"] == "claim_form.png" and read["detail"]["model"]
     value = next(e for e in events if e["detail"].get("field") == "patient_ref")
-    assert value["detail"]["value"] == "PT-010"
+    assert value["detail"]["value"] == "PT-014"
     assert value["detail"]["citations"][0]["source_id"] == "F10-claim_form"
-    flag = next(e for e in events if e["action"] == "flag_raised")
-    assert flag["detail"]["code"] == "discharge_summary_missing"
+    raised = {e["detail"]["code"]: e for e in events if e["action"] == "flag_raised"}
+    assert set(raised) == {"discharge_summary_missing", "tariff_code_missing"}
+    flag = raised["discharge_summary_missing"]
     assert flag["detail"]["rules"] == ["SHA-A-13.3.1-SUPPORTING-DOCS", "SHA-NEWS-3-DOCS"]
 
 
@@ -75,7 +76,7 @@ def test_a_corrected_page_records_the_flag_it_clears() -> None:
     client.post("/api/claims/F01/rescue")
 
     cleared = [e for e in history(client, "F01") if e["action"] == "flag_cleared"]
-    assert [e["detail"]["code"] for e in cleared] == ["signature_missing"]
+    assert [e["detail"]["code"] for e in cleared] == ["declaration_unsigned"]
 
 
 def test_the_export_is_one_downloadable_file_per_claim() -> None:

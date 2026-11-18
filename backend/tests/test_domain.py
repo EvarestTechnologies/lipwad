@@ -120,7 +120,7 @@ def test_uncited_coded_line_blocks_green() -> None:
 
 
 def test_open_flag_blocks_green() -> None:
-    flag = Flag(code="signature_missing", severity="amber", citations=[image_citation()])
+    flag = Flag(code="declaration_unsigned", severity="amber", citations=[image_citation()])
     claim = Claim(id="claim-1", fields=[field([image_citation()])], flags=[flag])
 
     assert not claim.can_be_green

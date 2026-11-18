@@ -26,7 +26,10 @@ export function StatusPill({ readiness, lifecycle }: { readiness: Claim["readine
 }
 
 export const REASON_TEXT: Record<string, string> = {
-  signature_missing: "The claim form is unsigned. Ask the clinician to sign, then snap the signed page.",
+  declaration_unsigned: "The hospital declaration on the claim form is not signed. Get it signed, then snap the signed page.",
+  facility_stamp_missing: "The claim form has no facility stamp. Stamp it, then snap it again.",
+  physician_details_missing: "The claim form is missing the rendering physician's name or registration number.",
+  tariff_code_missing: "Note: the invoice lines show no tariff codes. Lipwad does not check or suggest codes.",
   itemised_invoice_missing: "The invoice shows a total only. SHA needs each service listed.",
   service_type_inconsistent: "The invoice bills inpatient bed days, but the form records an outpatient visit.",
   practitioner_not_found: "The practitioner number is not in the registry. Check it with the ward.",
@@ -35,9 +38,9 @@ export const REASON_TEXT: Record<string, string> = {
   claim_rejected: "SHA rejected this claim. You have 7 working days to request a review with new evidence.",
   voice_note_unclear: "The voice note could not be heard. Record it again somewhere quiet.",
   admission_date_mismatch: "The voice note gives a different admission date from the claim form. Confirm it with the ward.",
-  discharge_summary_missing: "No discharge or case summary is on file. SHA needs one with every claim.",
-  claim_form_missing: "No claim form is on file. SHA needs one with every claim.",
-  invoice_missing: "No itemised invoice or final bill is on file. SHA needs one with every claim.",
+  discharge_summary_missing: "No discharge or case summary is on file. SHA's contract lists a discharge or case summary as required supporting documentation for this claim.",
+  claim_form_missing: "No claim form is on file. SHA's regulations say a claim is made on a claim form.",
+  invoice_missing: "No itemised invoice or final bill is on file. SHA's contract lists an itemised invoice as required supporting documentation for this claim.",
   discharge_summary_unsigned: "The discharge summary is not signed. Ask the treating clinician to sign it.",
   voice_needs_review: "Part of the voice note is not in English. Listen to it and enter any details yourself; Lipwad took nothing from it.",
 };
@@ -60,10 +63,13 @@ export const LABELS: Record<string, string> = {
   admission_date: "Admitted",
   discharge_date: "Discharged",
   diagnosis: "Diagnosis",
-  practitioner_name: "Clinician",
-  practitioner_id: "Practitioner number",
+  practitioner_name: "Rendering physician",
+  practitioner_id: "Physician registration no.",
   facility_id: "Facility",
-  clinician_signature: "Clinician signature",
+  physician_details: "Rendering physician details",
+  declaration_signature: "Hospital declaration signature",
+  facility_stamp: "Facility stamp",
+  invoice_tariff_codes: "Tariff codes on invoice",
   invoice_total: "Invoice total",
   invoice_itemised: "Itemised invoice",
   service_code: "Service code",
@@ -72,7 +78,10 @@ export const LABELS: Record<string, string> = {
 };
 
 const SHORT_REASON: Record<string, string> = {
-  signature_missing: "unsigned claim form",
+  declaration_unsigned: "hospital declaration unsigned",
+  facility_stamp_missing: "facility stamp missing",
+  physician_details_missing: "rendering physician details missing",
+  tariff_code_missing: "no tariff codes on the invoice (note)",
   itemised_invoice_missing: "invoice not itemised",
   service_type_inconsistent: "service type does not match the documents",
   practitioner_not_found: "practitioner not in the registry",

@@ -5,39 +5,42 @@
       "amount": 1000,
       "bbox": [
         60,
-        445,
-        835,
-        470
-      ]
+        480,
+        830,
+        510
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Malaria test",
       "amount": 800,
       "bbox": [
         60,
-        515,
+        540,
         810,
-        540
-      ]
+        570
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Medication",
       "amount": 700,
       "bbox": [
         60,
-        585,
+        610,
         810,
-        610
-      ]
+        640
+      ],
+      "has_tariff_code": false
     }
   ],
   "total": {
     "amount": 2500,
     "bbox": [
       60,
-      700,
-      850,
-      730
+      730,
+      845,
+      765
     ]
   },
   "itemised": true,

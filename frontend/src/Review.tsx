@@ -76,7 +76,7 @@ export function Review({ claimId }: { claimId: string }) {
       {claim.flags.length > 0 && (
         <ul className="flags">
           {claim.flags.map((flag) => (
-            <li key={flag.code} className={flag.severity === "red" ? "flag blocked" : "flag fix"}>
+            <li key={flag.code} className={flag.severity === "red" ? "flag blocked" : flag.severity === "note" ? "flag note" : "flag fix"}>
               <strong>{REASON_TEXT[flag.code] ?? flag.code}</strong>
               <span className="cites">
                 {flag.citations.map((c, i) => (
@@ -232,7 +232,7 @@ function describe(event: AuditEvent): string {
   const rules = Array.isArray(d.rules) ? d.rules.join(", ") : "";
   switch (event.action) {
     case "file_read": return `Read ${String(d.file)}${d.model ? ` with ${d.model}` : ""}`;
-    case "value_extracted": return `Found ${LABELS[String(d.field)] ?? String(d.field).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())}: ${display(String(d.field), String(d.value))}`;
+    case "value_extracted": return `Found ${label(String(d.field))}: ${display(String(d.field), String(d.value))}`;
     case "flag_raised": return `Flagged: ${plain(String(d.code))} (${rules})`;
     case "flag_cleared": return `Cleared: ${plain(String(d.code))}`;
     case "claim_confirmed": return `Confirmed: “${d.statement}”`;
@@ -282,8 +282,12 @@ function Explained({ text }: { text: string }) {
   );
 }
 
+function label(name: string): string {
+  return LABELS[name] ?? name.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+}
+
 function evidenceFor(field: Field, citation: Citation): Selected {
-  return { label: LABELS[field.name] ?? field.name, value: field.value, citation };
+  return { label: label(field.name), value: field.value, citation };
 }
 
 /** Opens the evidence panel on the first flagged photo region, or the first field. */

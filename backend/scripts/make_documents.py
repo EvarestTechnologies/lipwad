@@ -45,8 +45,8 @@ def claim_form(case: dict, signed: bool) -> Image.Image:
         ("Date of admission / visit", fields["admission_date"]),
         ("Date of discharge", fields["discharge_date"]),
         ("Diagnosis", fields["diagnosis"]),
-        ("Attending practitioner", "Dr. Amani Otieno"),
-        ("Practitioner number", case["practitioner_id"]),
+        ("Rendering physician", "Dr. Amani Otieno"),
+        ("Physician registration no.", case["practitioner_id"]),
     ]
     y = 380
     for label, value in rows:
@@ -54,10 +54,22 @@ def claim_form(case: dict, signed: bool) -> Image.Image:
         draw.text((520, y), value, fill=INK, font=font(34))
         draw.line((520, y + 44, WIDTH - 80, y + 44), fill=(180, 175, 165), width=2)
         y += 95
-    draw.text((80, 1300), "Clinician signature:", fill=INK, font=font(30))
-    draw.line((520, 1360, 1000, 1360), fill=INK, width=3)
+    draw.text((80, 1180), "HOSPITAL DECLARATION", fill=INK, font=font(34))
+    draw.text(
+        (80, 1235),
+        "The information above and any attachments are true, accurate and complete.",
+        fill=INK,
+        font=font(26),
+    )
+    draw.text((80, 1360), "Signature:", fill=INK, font=font(30))
+    draw.line((260, 1410, 700, 1410), fill=INK, width=3)
     if signed:
-        draw.text((540, 1290), "A. Otieno", fill=(30, 50, 140), font=font(56))
+        draw.text((280, 1340), "M. Wanjala", fill=(30, 50, 140), font=font(56))
+    draw.text((780, 1290), "Facility stamp:", fill=INK, font=font(26))
+    draw.ellipse((800, 1330, 1080, 1520), outline=(150, 40, 60), width=5)
+    stamp = FACILITY_NAMES[case["facility_level"]].split()[0].upper()
+    draw.text((940, 1395), stamp, fill=(150, 40, 60), font=font(28), anchor="mm")
+    draw.text((940, 1445), "SYNTHETIC", fill=(150, 40, 60), font=font(22), anchor="mm")
     return image
 
 

@@ -28,7 +28,10 @@ CLAIM_FORM_FIELDS = (
     "practitioner_id",
     "facility_id",
 )
-REQUIRED_FIELDS = {"claim_form": ("patient_ref", "admission_date", "practitioner_id")}
+# Fields a retake is asked for when they are missing. A missing rendering physician is a
+# gap in the form, flagged by the rules, not a reason to retake the photo.
+REQUIRED_FIELDS = {"claim_form": ("patient_ref", "admission_date")}
+PHYSICIAN_FIELDS = ("practitioner_name", "practitioner_id")
 
 DOCUMENT_PROMPTS = {
     "claim_form": (
@@ -36,16 +39,20 @@ DOCUMENT_PROMPTS = {
         "interpret, correct or add anything. Return JSON only: "
         '{"fields":[{"name":str,"value":str,"confidence":0-1,'
         '"bbox":[x0,y0,x1,y1] normalised 0-1 around the value,"quote":str}],'
-        '"signature_present":bool,"signature_bbox":[x0,y0,x1,y1] around the signature line,'
-        '"unreadable":[field names]}. '
-        f"Field names: {', '.join(CLAIM_FORM_FIELDS)}. Dates as YYYY-MM-DD. "
+        '"declaration_signed":bool,"declaration_bbox":[x0,y0,x1,y1] around the hospital '
+        'declaration signature line,"stamp_present":bool,"stamp_bbox":[x0,y0,x1,y1] around '
+        'the facility stamp box,"unreadable":[field names]}. '
+        f"Field names: {', '.join(CLAIM_FORM_FIELDS)}; practitioner_name is the rendering "
+        "physician and practitioner_id their registration number. Dates as YYYY-MM-DD. "
         "Never guess: if a value is blurred or unclear, leave it out of fields and list "
         "its name in unreadable."
     ),
     "invoice": (
         "You transcribe a photographed hospital invoice. Copy what is written; do not "
         "interpret or add anything. Return JSON only: "
-        '{"lines":[{"description":str,"amount":int,"bbox":[x0,y0,x1,y1]}],'
+        '{"lines":[{"description":str,"amount":int,"bbox":[x0,y0,x1,y1],'
+        '"has_tariff_code":bool (true only if a tariff or service code is printed on '
+        "the line)}],"
         '"total":{"amount":int,"bbox":[x0,y0,x1,y1]},'
         '"itemised":bool (true only if separate priced services are listed),'
         '"unreadable":[str]}. Amounts in Kenyan shillings without separators. '
@@ -129,17 +136,35 @@ def _claim_form(document: DocumentInput, data: dict[str, Any]) -> ExtractionResu
     for name in REQUIRED_FIELDS["claim_form"]:
         if name not in read and not any(reason.startswith(name) for reason in retake):
             retake.append(f"{name} is missing")
-    signed = bool(data.get("signature_present"))
-    fields.append(
-        _field(
-            "clinician_signature",
-            "present" if signed else "absent",
-            1.0,
-            upload_id,
-            data.get("signature_bbox"),
-            None,
+    unclear = any(r.startswith(PHYSICIAN_FIELDS) for r in retake)
+    if not unclear:
+        named = [f for f in fields if f.name in PHYSICIAN_FIELDS]
+        complete = len(named) == len(PHYSICIAN_FIELDS)
+        fields.append(
+            Field(
+                name="physician_details",
+                value="present" if complete else "absent",
+                confidence=1.0,
+                citations=[c for f in named for c in f.citations]
+                or [Citation(kind="image", source_id=upload_id, region=_region(None))],
+            )
         )
+    marks = (
+        ("declaration_signature", "declaration_signed", "declaration_bbox"),
+        ("facility_stamp", "stamp_present", "stamp_bbox"),
     )
+    # A page that needs a retake is not trusted for signatures or stamps either.
+    for name, present, bbox in marks if not retake else ():
+        fields.append(
+            _field(
+                name,
+                "present" if data.get(present) else "absent",
+                1.0,
+                upload_id,
+                data.get(bbox),
+                None,
+            )
+        )
     return ExtractionResult(
         upload_id=upload_id, kind="claim_form", fields=fields, retake_reasons=retake, model=""
     )
@@ -171,6 +196,18 @@ def _invoice(document: DocumentInput, data: dict[str, Any]) -> ExtractionResult:
             )
         )
     lines = data.get("lines", [])
+    if lines:
+        coded = sum(bool(line.get("has_tariff_code")) for line in lines)
+        fields.append(
+            Field(
+                name="invoice_tariff_codes",
+                value="all" if coded == len(lines) else ("none" if not coded else "some"),
+                confidence=1.0,
+                citations=[
+                    c for f in fields if f.name.startswith("invoice_line") for c in f.citations
+                ],
+            )
+        )
     fields.append(
         _field(
             "invoice_itemised",

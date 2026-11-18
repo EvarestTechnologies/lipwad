@@ -23,7 +23,9 @@ from app.hie.base import Confirmation, HieDuplicateClaimError, HieEditRefusedErr
 from app.services import ClaimBusyError, Services
 
 ACTIONS = {
-    "signature_missing": "Ask the clinician to sign, then snap the signed page",
+    "declaration_unsigned": "Get the hospital declaration signed, then snap the signed page",
+    "facility_stamp_missing": "Stamp the claim form, then snap it again",
+    "physician_details_missing": "Add the rendering physician's name and registration number",
     "itemised_invoice_missing": "Snap the itemised invoice",
     "service_type_inconsistent": "Correct the service type to match the documents",
     "practitioner_not_found": "Confirm the practitioner's registration number",
@@ -248,7 +250,7 @@ def _summary(claim) -> dict:
     values = {field.name: field.value for field in claim.fields}
     amount = values.get("invoice_total")
     deadline: AwareDatetime | None = claim.resubmission_deadline or claim.review_deadline
-    reasons = [flag.code for flag in claim.flags]
+    reasons = [flag.code for flag in claim.flags if flag.severity != "note"]
     return {
         "id": claim.id,
         "patient_name": values.get("patient_name"),

@@ -27,7 +27,11 @@ export function RulesScreen() {
           <li key={rule.id} id={rule.id}>
             <p className="mono">{rule.id} <span className="chip">{STATUS[rule.status]}</span></p>
             <p>{rule.checks}</p>
-            <blockquote>“{rule.quote}”</blockquote>
+            {rule.quote_kind === "summary" ? (
+              <p className="summary"><strong>Summary of the Second and Third Schedules:</strong> {rule.quote}</p>
+            ) : (
+              <blockquote>“{rule.quote}”</blockquote>
+            )}
             {rule.url ? (
               <p className="muted">
                 {rule.title}, {rule.issuer}. {rule.clause}. {rule.version}.{" "}

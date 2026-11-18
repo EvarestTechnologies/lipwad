@@ -104,3 +104,5 @@ blockquote { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--sign
 .rule a { color: var(--signal); }
 .history summary { cursor: pointer; list-style: revert; }
 .history summary h2 { display: inline; }
+.flag.note { background: var(--chip-neutral-bg); color: var(--chip-neutral-fg); }
+.summary { margin: 8px 0; font-size: 14px; color: var(--ink-body); }
