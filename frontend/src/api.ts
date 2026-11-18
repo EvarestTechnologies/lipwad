@@ -99,7 +99,7 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 export function display(name: string, value: string): string {
   const v = value.replace(" [demo]", "");
   if (name === "invoice_total" && /^\d+$/.test(v)) return ksh(Number(v));
-  if (name === "clinician_signature") return v === "present" ? "Signed" : "Not signed";
+  if (name === "clinician_signature" || name === "discharge_summary_signature") return v === "present" ? "Signed" : "Not signed";
   if (name === "invoice_itemised") return v === "yes" ? "Yes" : "No, total only";
   if (DATE.test(v)) {
     return new Date(`${v}T00:00:00`).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });

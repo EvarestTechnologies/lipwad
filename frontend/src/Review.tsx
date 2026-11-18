@@ -232,7 +232,7 @@ function describe(event: AuditEvent): string {
   const rules = Array.isArray(d.rules) ? d.rules.join(", ") : "";
   switch (event.action) {
     case "file_read": return `Read ${String(d.file)}${d.model ? ` with ${d.model}` : ""}`;
-    case "value_extracted": return `Found ${LABELS[String(d.field)] ?? d.field}: ${display(String(d.field), String(d.value))}`;
+    case "value_extracted": return `Found ${LABELS[String(d.field)] ?? String(d.field).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())}: ${display(String(d.field), String(d.value))}`;
     case "flag_raised": return `Flagged: ${plain(String(d.code))} (${rules})`;
     case "flag_cleared": return `Cleared: ${plain(String(d.code))}`;
     case "claim_confirmed": return `Confirmed: “${d.statement}”`;
