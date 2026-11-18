@@ -86,10 +86,8 @@ blockquote { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--sign
 .sidebar { background: var(--navy-950); color: var(--navy-text-soft); padding: 24px 16px; display: flex; flex-direction: column; gap: 4px; height: 100dvh; overflow-y: auto; }
 .nav-link { gap: 12px; }
 .nav-icon { flex: none; }
-.logo-short { display: none; }
 .facility { margin-top: auto; display: grid; gap: 10px; font: var(--text-small); color: var(--navy-text-muted); padding: 12px 4px 0; }
 .facility strong { color: var(--card); }
-.sidebar-badge { display: flex; gap: 8px; align-items: center; font: var(--text-chip); color: var(--fix-solid); background: var(--navy-800); border-radius: var(--radius-sm); padding: 8px 10px; }
 .content { display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100dvh; overflow: hidden; }
 
 .page-header { flex: none; height: 92px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 32px; border-bottom: 1px solid var(--border); background: var(--paper); }
@@ -136,16 +134,36 @@ h2.first { margin-top: 16px; }
 .confirm-row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
 .confirm .guardrail { margin: 0; }
 
-/* Under 1024px the sidebar shrinks to icons. */
+/* Collapsed sidebar: an icon rail at its own fixed width. */
+.shell { transition: grid-template-columns 160ms ease; }
+.shell.collapsed { grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr); }
+.sidebar-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 20px; min-height: 32px; }
+.sidebar .logo { margin: 0; min-height: 32px; padding: 0 12px; }
+.sidebar-toggle { position: relative; width: 32px; height: 32px; min-height: 32px; padding: 0; display: grid; place-items: center; background: none; color: var(--navy-text-muted); border-radius: var(--radius-sm); flex: none; }
+.sidebar-toggle:hover { background: var(--navy-800); color: var(--card); }
+.sidebar-toggle > * { grid-area: 1 / 1; }
+.logo-mark { font: 800 22px/1 var(--font-ui); color: var(--card); }
+.shell.collapsed .sidebar { padding: 20px 10px; align-items: center; }
+.shell.collapsed .sidebar-top { justify-content: center; }
+.shell.collapsed .sidebar-toggle { width: 48px; height: 48px; }
+.shell.collapsed .sidebar-toggle .panel-icon { opacity: 0; }
+.shell.collapsed .sidebar-toggle:hover .panel-icon, .shell.collapsed .sidebar-toggle:focus-visible .panel-icon { opacity: 1; }
+.shell.collapsed .sidebar-toggle:hover .logo-mark, .shell.collapsed .sidebar-toggle:focus-visible .logo-mark { opacity: 0; }
+.shell.collapsed .nav-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.shell.collapsed .sidebar a { justify-content: center; width: 48px; padding: 10px; }
+.shell.collapsed .facility { padding: 0; }
+.sidebar a { position: relative; }
+
+/* Tooltips: the toggle always, nav links when the rail is collapsed. */
+[data-tip]:hover::after, [data-tip]:focus-visible::after {
+  content: attr(data-tip); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
+  white-space: nowrap; font: var(--text-small); color: var(--card); background: var(--navy-800);
+  padding: 6px 10px; border-radius: var(--radius-sm); box-shadow: var(--shadow-float); pointer-events: none; z-index: 10;
+}
+.sidebar { overflow: visible; position: relative; z-index: 5; }
+
+/* Under 1024px the main column uses tighter padding. */
 @media (max-width: 1023px) {
-  .shell { grid-template-columns: 72px minmax(0, 1fr); }
-  .sidebar { padding: 20px 10px; align-items: center; }
-  .nav-label, .logo-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .logo-short { display: inline; }
-  .sidebar a { justify-content: center; width: 48px; padding: 10px; }
-  .sidebar .logo { margin-bottom: 16px; }
-  .facility { padding: 0; }
-  .sidebar-badge { justify-content: center; padding: 8px; }
   .page-header { padding: 0 20px; }
   .page-top { padding: 12px 20px 0; }
   .page-body.scroll { padding: 8px 20px 24px; }

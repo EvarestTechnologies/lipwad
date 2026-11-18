@@ -67,5 +67,6 @@ These are news reports of SHA's own figures, not SHA rule documents, so they are
 | Asset | Source | Licence |
 |---|---|---|
 | Schibsted Grotesk, Martian Mono | Google Fonts | SIL Open Font License 1.1 |
+| PanelLeftOpen and PanelLeftClose icon paths | Lucide (https://lucide.dev), inlined in `frontend/src/App.tsx` | ISC licence |
 | Python and npm packages | `backend/pyproject.toml`, `frontend/package.json` | Each package's own open-source licence |
 

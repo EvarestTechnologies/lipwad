@@ -85,6 +85,7 @@ make deploy                 # build and deploy to Modal
 
 ## Credits
 - Fonts: Schibsted Grotesk and Martian Mono, via Google Fonts under the SIL Open Font License.
+- Sidebar toggle icons: PanelLeftOpen and PanelLeftClose from Lucide (https://lucide.dev), ISC licence.
 - Open-source libraries listed in `backend/pyproject.toml` and `frontend/package.json`.
 
 Licensed under Apache 2.0.

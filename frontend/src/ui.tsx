@@ -68,9 +68,9 @@ export const onlyAttachments = (codes: string[]) => codes.length > 0 && codes.ev
 export const NO_ADVICE =
   "Lipwad never submits a claim without your OK, and never gives clinical advice.";
 
-export function Link({ to, current, className, children }: { to: string; current?: boolean; className?: string; children: ReactNode }) {
+export function Link({ to, current, className, tip, children }: { to: string; current?: boolean; className?: string; tip?: string; children: ReactNode }) {
   return (
-    <a href={to} className={className} aria-current={current ? "page" : undefined} onClick={(e) => { e.preventDefault(); navigate(to); }}>
+    <a href={to} className={className} data-tip={tip} aria-current={current ? "page" : undefined} onClick={(e) => { e.preventDefault(); navigate(to); }}>
       {children}
     </a>
   );

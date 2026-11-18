@@ -53,7 +53,8 @@
   --radius-xl: 18px;
   --radius-pill: 999px;
   --touch: 44px;
-  --sidebar-w: 248px;
+  --sidebar-w: 248px;            /* expanded */
+  --sidebar-w-collapsed: 72px;   /* icon rail */
   --shadow-float: 0 8px 20px rgba(10, 31, 68, 0.35);
   --shadow-sheet: 0 -10px 30px rgba(6, 18, 42, 0.25);
   --focus-ring: 0 0 0 3px var(--signal);
