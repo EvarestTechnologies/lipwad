@@ -111,11 +111,12 @@ class ClaimAgent:
         fields: dict[str, Field] = {}
         retake: list[str] = []
         voice_retake: Citation | None = None
+        voice_review: list[Citation] = []
         for upload in uploads:
             if upload.id not in known:
                 save_upload(session, upload)
             if upload.kind == "audio":
-                voice_retake = self._listen(session, case_id, upload, fields)
+                voice_retake = self._listen(session, case_id, upload, fields, voice_review)
                 continue
             kind = DOCUMENT_KINDS.get(upload.filename, "claim_form")
             result = extract_document(
@@ -153,7 +154,14 @@ class ClaimAgent:
             )
 
         on_file = present_types(_original_name(upload.filename) for upload in uploads)
-        evidence = Evidence(fields, retake, found, voice_retake, documents_present=on_file)
+        evidence = Evidence(
+            fields,
+            retake,
+            found,
+            voice_retake,
+            voice_review=voice_review,
+            documents_present=on_file,
+        )
         flags = check(claim, evidence, self._clock())
         self._audit_flags(session, case_id, claim.flags, flags)
         coded = []
@@ -183,8 +191,11 @@ class ClaimAgent:
         )
         self._explain(session, claim)
 
-    def _listen(self, session, case_id, upload, fields) -> Citation | None:
-        """Hear a voice note into `fields`; return a re-record citation if it was not heard."""
+    def _listen(self, session, case_id, upload, fields, review) -> Citation | None:
+        """Hear a voice note into `fields` and segments for human review into `review`.
+
+        Returns a re-record citation if the note was not heard.
+        """
         whole_note = Citation(
             kind="audio",
             source_id=upload.id,
@@ -200,6 +211,7 @@ class ClaimAgent:
             self._log(session, case_id, "read", f"Voice note could not be heard: {error}", None, [])
             return whole_note
         fields.update({field.name: field for field in result.fields})
+        review.extend(result.review)
         self._audit_read(session, case_id, upload, result.fields, result.model)
         heard = "; ".join(f'"{c.quote}"' for f in result.fields for c in f.citations)
         self._log(
@@ -208,7 +220,12 @@ class ClaimAgent:
             "read",
             f"Heard voice note: {_count(len(result.fields), 'cited value')}"
             + (f" ({heard})" if heard else "")
-            + (f"; {'; '.join(result.retake_reasons)}" if result.retake_reasons else ""),
+            + (f"; {'; '.join(result.retake_reasons)}" if result.retake_reasons else "")
+            + (
+                f"; {_count(len(result.review), 'segment')} not in English, sent for human review"
+                if result.review
+                else ""
+            ),
             result.model,
             [c for field in result.fields for c in field.citations],
         )
@@ -452,7 +469,7 @@ def _original_name(filename: str) -> str:
 
 SETTLEMENT_FLAGS = {"resubmission_deadline_near", "claim_rejected"}
 # Flags raised by evidence a corrected claim form does not speak for.
-OTHER_EVIDENCE_FLAGS = {"retake_required", "voice_note_unclear"} | {
+OTHER_EVIDENCE_FLAGS = {"retake_required", "voice_note_unclear", "voice_needs_review"} | {
     requirement.code for requirement in BASELINE
 }
 

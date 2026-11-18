@@ -36,6 +36,7 @@ ACTIONS = {
     "claim_form_missing": "Snap the claim form",
     "invoice_missing": "Snap the itemised invoice or final bill",
     "discharge_summary_unsigned": "Ask the treating clinician to sign the discharge summary",
+    "voice_needs_review": "Listen to the part of the voice note that is not in English",
 }
 
 TODAY_FEED = 8

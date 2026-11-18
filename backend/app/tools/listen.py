@@ -3,6 +3,11 @@
 Values come only from what was said: each field cites the audio upload, the seconds
 it was spoken between and the words themselves. A note with no speech produces a
 request to record it again, never a guessed value.
+
+Muse Voice Transcribe is used for English only. A segment that reads as Kiswahili is
+marked for human review and no value is taken from it. Detection looks for common
+Kiswahili words, so another language may not be caught; English values are only read
+from sentences that say how the patient arrived.
 """
 
 import re
@@ -40,6 +45,18 @@ MONTH_FIRST = re.compile(rf"\b(?P<month>{_MONTH})\s+(?P<day>{_DAY}),?\s+(?P<year
 ISO = re.compile(r"\b(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})\b")
 ARRIVAL = re.compile(r"\b(admit\w*|admission|came|arrived|brought|presented)\b", re.I)
 SENTENCE = re.compile(r"(?<=[.!?])\s+")
+# Common Kiswahili words, including ones a ward voice note is likely to use.
+KISWAHILI = set(
+    """
+    na ya wa kwa ni la za cha vya katika kutoka mpaka hadi lakini pia sana au kama
+    mgonjwa wagonjwa alilazwa amelazwa kulazwa alikuja amekuja akapewa alipewa dawa
+    wodi wodini hospitali kliniki daktari muuguzi homa kikohozi maumivu damu
+    tarehe siku mwezi mwaka leo jana kesho saa asubuhi jioni usiku
+    moja mbili tatu nne tano sita saba nane tisa kumi
+    nyumbani kwenda akaruhusiwa aliruhusiwa ameruhusiwa yeye huyu yule hapa pale sasa
+    """.split()
+)
+WORD = re.compile(r"[a-zA-Z']+")
 
 
 class NoteInput(BaseModel):
@@ -52,6 +69,14 @@ class NoteResult(BaseModel):
     fields: list[Field]
     retake_reasons: list[str]
     model: str
+    review: list[Citation] = []  # segments a person must listen to; no values came from them
+
+
+def needs_review(text: str) -> bool:
+    """True when a segment reads as Kiswahili rather than English."""
+    words = [word.lower() for word in WORD.findall(text)]
+    hits = sum(word in KISWAHILI for word in words)
+    return hits >= 2 or (hits == 1 and len(words) <= 4)
 
 
 def spoken_date(text: str) -> str | None:
@@ -92,17 +117,20 @@ def transcribe_note(note: NoteInput, transcriber: Transcriber) -> NoteResult:
             retake_reasons=["voice note could not be heard"],
             model=transcript.model_id,
         )
-    fields = []
+    fields, review = [], []
     for segment in transcript.segments:
-        admitted = arrival_date(segment.text)
+        citation = Citation(
+            kind="audio",
+            source_id=note.upload.id,
+            t_start=segment.t_start,
+            t_end=segment.t_end,
+            quote=segment.text,
+        )
+        if needs_review(segment.text):
+            review.append(citation)
+            continue
+        admitted = arrival_date(segment.text) if not fields else None
         if admitted:
-            citation = Citation(
-                kind="audio",
-                source_id=note.upload.id,
-                t_start=segment.t_start,
-                t_end=segment.t_end,
-                quote=segment.text,
-            )
             fields.append(
                 Field(
                     name="voice_admission_date",
@@ -111,7 +139,10 @@ def transcribe_note(note: NoteInput, transcriber: Transcriber) -> NoteResult:
                     citations=[citation],
                 )
             )
-            break
     return NoteResult(
-        upload_id=note.upload.id, fields=fields, retake_reasons=[], model=transcript.model_id
+        upload_id=note.upload.id,
+        fields=fields,
+        retake_reasons=[],
+        model=transcript.model_id,
+        review=review,
     )

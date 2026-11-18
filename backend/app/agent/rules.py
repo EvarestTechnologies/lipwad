@@ -7,7 +7,7 @@ rules.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Literal
 
@@ -200,6 +200,7 @@ class Evidence:
     retake_reasons: list[str]
     practitioner_found: bool | None
     voice_retake: Citation | None = None
+    voice_review: list[Citation] = field(default_factory=list)
     # HIE document types on file; None means the documents were not listed for this check.
     documents_present: set[str] | None = None
     requirements: list[Requirement] | None = None
@@ -250,6 +251,14 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
                 code="discharge_summary_unsigned",
                 severity="amber",
                 citations=[*cite("discharge_summary_signature"), rule("SHA-B2-SHIF-DOCS")],
+            )
+        )
+    if evidence.voice_review:
+        flags.append(
+            Flag(
+                code="voice_needs_review",
+                severity="amber",
+                citations=[*evidence.voice_review, rule("LIPWAD-EVIDENCE-QUALITY")],
             )
         )
     if fields.get("clinician_signature") and fields["clinician_signature"].value == "absent":

@@ -162,3 +162,12 @@ def test_an_outpatient_discharge_summary_signature_is_not_required() -> None:
     assert "discharge_summary_unsigned" not in codes(
         visit_type="Outpatient", discharge_summary_signature="absent"
     )
+
+
+def test_a_voice_segment_needing_review_is_flagged_with_its_seconds() -> None:
+    segment = Citation(kind="audio", source_id="F11-voice_note", t_start=6.5, t_end=14)
+    flags = check(Claim(id="X"), Evidence({}, [], True, voice_review=[segment]), NOW)
+
+    assert [f.code for f in flags] == ["voice_needs_review"]
+    assert flags[0].citations[0] == segment
+    assert rules_cited(flags[0]) == {"LIPWAD-EVIDENCE-QUALITY"}

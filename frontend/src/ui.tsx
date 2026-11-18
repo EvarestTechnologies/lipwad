@@ -39,6 +39,7 @@ export const REASON_TEXT: Record<string, string> = {
   claim_form_missing: "No claim form is on file. SHA needs one with every claim.",
   invoice_missing: "No itemised invoice or final bill is on file. SHA needs one with every claim.",
   discharge_summary_unsigned: "The discharge summary is not signed. Ask the treating clinician to sign it.",
+  voice_needs_review: "Part of the voice note is not in English. Listen to it and enter any details yourself; Lipwad took nothing from it.",
 };
 
 export const NO_ADVICE =
@@ -84,6 +85,7 @@ const SHORT_REASON: Record<string, string> = {
   claim_form_missing: "claim form missing",
   invoice_missing: "invoice missing",
   discharge_summary_unsigned: "discharge summary unsigned",
+  voice_needs_review: "voice note needs a person to listen",
 };
 const DOCUMENTS: Record<string, string> = {
   claim_form_signed: "signed claim form",
