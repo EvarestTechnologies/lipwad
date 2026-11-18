@@ -15,14 +15,21 @@ lint:
 	cd backend && uv run ruff check . && uv run ruff format --check .
 	cd frontend && npm run typecheck
 
+LIVE_URL ?= https://stellaacharoiro--lipwad-web.us-east.modal.run
+
 deploy:
 	cd frontend && npm run build
 	modal deploy deploy/modal_app.py
+	$(MAKE) smoke URL=$(LIVE_URL)
 
+# Fails if the app, its shell or the reasoning model is down. The reasoning check makes at
+# most one small model call per 10 minutes.
 smoke:
 	@test -n "$(URL)" || (echo "usage: make smoke URL=https://..." && exit 1)
-	curl -fsS "$(URL)/api/health" && echo
+	curl -fsS --retry 10 --retry-all-errors --retry-delay 3 "$(URL)/api/health" && echo
 	curl -fsS -o /dev/null -w "app shell: %{http_code}\n" "$(URL)/"
+	@curl -sS "$(URL)/api/health/reasoning" -w "\n" -o /tmp/lipwad-reasoning.json; cat /tmp/lipwad-reasoning.json; echo; \
+		grep -q '"status":"ok"' /tmp/lipwad-reasoning.json || (echo "REASONING CHECK FAILED: explanations would show as not available" && exit 1)
 
 review-all:
 	@test -n "$(URL)" || (echo "usage: make review-all URL=https://..." && exit 1)

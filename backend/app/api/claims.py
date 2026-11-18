@@ -187,6 +187,14 @@ def router(services: Services) -> APIRouter:
             media = "audio/wav" if row.path.endswith(".wav") else "image/png"
             return FileResponse(row.path, media_type=media)
 
+    @admin.get("/health/reasoning")
+    def reasoning_health() -> JSONResponse:
+        """Whether the reasoning model answers; 503 when it does not."""
+        if services.reasoning_probe is None:
+            raise HTTPException(status_code=404)
+        result = services.reasoning_probe.check()
+        return JSONResponse(result, status_code=200 if result["status"] == "ok" else 503)
+
     @admin.post("/demo/snapshot", include_in_schema=False)
     def snapshot(x_admin_key: Annotated[str | None, Header()] = None) -> dict:
         """Save the current demo as the state the scheduled reset restores."""
