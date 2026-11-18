@@ -141,14 +141,9 @@ h2.first { margin-top: 16px; }
 .sidebar .logo { margin: 0; min-height: 32px; padding: 0 12px; }
 .sidebar-toggle { position: relative; width: 32px; height: 32px; min-height: 32px; padding: 0; display: grid; place-items: center; background: none; color: var(--navy-text-muted); border-radius: var(--radius-sm); flex: none; }
 .sidebar-toggle:hover { background: var(--navy-800); color: var(--card); }
-.sidebar-toggle > * { grid-area: 1 / 1; }
-.logo-mark { font: 800 22px/1 var(--font-ui); color: var(--card); }
 .shell.collapsed .sidebar { padding: 20px 10px; align-items: center; }
 .shell.collapsed .sidebar-top { justify-content: center; }
 .shell.collapsed .sidebar-toggle { width: 48px; height: 48px; }
-.shell.collapsed .sidebar-toggle .panel-icon { opacity: 0; }
-.shell.collapsed .sidebar-toggle:hover .panel-icon, .shell.collapsed .sidebar-toggle:focus-visible .panel-icon { opacity: 1; }
-.shell.collapsed .sidebar-toggle:hover .logo-mark, .shell.collapsed .sidebar-toggle:focus-visible .logo-mark { opacity: 0; }
 .shell.collapsed .nav-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .shell.collapsed .sidebar a { justify-content: center; width: 48px; padding: 10px; }
 .shell.collapsed .facility { padding: 0; }

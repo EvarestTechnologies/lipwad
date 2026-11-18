@@ -85,7 +85,6 @@ export function App() {
             aria-label={action}
             data-tip={`${action} (${SHORTCUT})`}
           >
-            {collapsed && <span className="logo-mark" aria-hidden="true">L</span>}
             <PanelIcon open={collapsed} />
           </button>
         </div>
