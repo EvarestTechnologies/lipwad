@@ -45,6 +45,26 @@ export const REASON_TEXT: Record<string, string> = {
   voice_needs_review: "Part of the voice note is not in English. Listen to it and enter any details yourself; Lipwad took nothing from it.",
 };
 
+/** What a person does about each finding, in plain words. Lipwad never makes the fix itself. */
+export const FIX_STEP: Record<string, string> = {
+  discharge_summary_missing: "Attach the discharge or case summary.",
+  claim_form_missing: "Attach the claim form.",
+  invoice_missing: "Attach the itemised invoice or final bill.",
+  itemised_invoice_missing: "Attach an invoice that lists each service with its price.",
+  declaration_unsigned: "Get the hospital declaration signed, then attach the signed page.",
+  facility_stamp_missing: "Stamp the claim form, then attach it again.",
+  physician_details_missing: "Add the rendering physician's name and registration number to the claim form.",
+  discharge_summary_unsigned: "Ask the treating clinician to sign the discharge summary, then attach it.",
+  service_type_inconsistent: "Check the visit type and the billed bed days with the ward, and correct the document that is wrong.",
+  practitioner_not_found: "Confirm the practitioner's registration number with the ward.",
+  admission_date_mismatch: "Confirm the admission date with the ward, and correct the document that is wrong.",
+  retake_required: "Retake the photo in better light.",
+  voice_note_unclear: "Record the voice note again somewhere quiet.",
+  voice_needs_review: "Listen to the part of the voice note that is not in English and enter the details yourself.",
+};
+const DOCUMENT_GAPS = new Set(["discharge_summary_missing", "claim_form_missing", "invoice_missing"]);
+export const onlyAttachments = (codes: string[]) => codes.length > 0 && codes.every((c) => DOCUMENT_GAPS.has(c));
+
 export const NO_ADVICE =
   "Lipwad never submits a claim without your OK, and never gives clinical advice.";
 

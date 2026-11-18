@@ -165,3 +165,5 @@ h2.first { margin-top: 16px; }
   .row-link { flex-wrap: wrap; gap: 8px 12px; }
   .row-link .who { flex-basis: 100%; order: 2; }
 }
+.fix-list { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--ink); }
+.rescue .guardrail { margin: 0; }

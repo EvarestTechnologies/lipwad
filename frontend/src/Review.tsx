@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, clock, display, explanation, patientName, timeLeft, type AuditEvent, type Citation, type ClaimDetail, type Draft, type Field } from "./api";
-import { LABELS, Link, NO_ADVICE, Page, plain, REASON_TEXT, StatusPill } from "./ui";
+import { FIX_STEP, LABELS, Link, NO_ADVICE, onlyAttachments, Page, plain, REASON_TEXT, StatusPill } from "./ui";
 
 
 type Selected = { label: string; value: string; citation: Citation };
@@ -69,6 +69,9 @@ export function Review({ claimId }: { claimId: string }) {
   const deadline = claim.resubmission_deadline ?? claim.review_deadline;
   const showFix = canFix || (draft && !withSha) || (rescue && !corrected);
   const showConfirm = canSubmit || (rescue && corrected);
+  // A draft that needs a fix the corrected-page flow does not cover gets a plain checklist.
+  const toFix = claim.flags.filter((f) => f.severity !== "note" && !["resubmission_deadline_near", "claim_rejected"].includes(f.code));
+  const showChecklist = claim.lifecycle === "draft" && claim.readiness !== "green" && claim.readiness !== null && toFix.length > 0 && !showFix;
   const flagItems = claim.flags.map((flag) => (
     <li key={flag.code} className={flag.severity === "red" ? "flag blocked" : flag.severity === "note" ? "flag note" : "flag fix"}>
       <strong>{REASON_TEXT[flag.code] ?? flag.code}</strong>
@@ -182,8 +185,21 @@ export function Review({ claimId }: { claimId: string }) {
           {tab === "history" && <History claimId={claim.id} version={detail.activity.length} />}
         </div>
 
-        {(showFix || showConfirm) && (
+        {(showFix || showConfirm || showChecklist) && (
           <div className="dock">
+            {showChecklist && (
+              <section className="rescue" aria-label="What to fix">
+                <h2>What to fix</h2>
+                <ul className="fix-list">
+                  {toFix.map((f) => <li key={f.code}>{FIX_STEP[f.code] ?? REASON_TEXT[f.code] ?? f.code}</li>)}
+                </ul>
+                <button className="secondary" disabled={busy !== null} onClick={() => act("run", () => api.run(claim.id))}>
+                  {busy === "run" ? "Lipwad is reading…"
+                    : onlyAttachments(toFix.map((f) => f.code)) ? "I've attached it, review again" : "I've made the fix, review again"}
+                </button>
+                <p className="guardrail">Lipwad never fills anything in. A person makes every fix. {NO_ADVICE}</p>
+              </section>
+            )}
             {showFix && (
               <section className="rescue" aria-label={rescue ? "Rescue" : "Fix"}>
                 <h2>{rescue ? "Rescue" : "Fix"}</h2>
