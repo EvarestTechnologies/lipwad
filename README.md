@@ -43,7 +43,7 @@ Running the agent live on real models, every demo case reaches its expected stat
 | F04 | Practitioner not in registry | Red · practitioner not found |
 | F05 | Returned claim on day 13 of 14 | Amber · deadline near; rescue resubmits the signed page |
 | F06 | Voice note gives a different admission date from the form | Amber · admission date mismatch, both sources cited |
-| F07 | Inpatient care billed at a level 2 facility | Red · outside facility level |
+| F07 | Inpatient care at a level 2 facility | Green · covered by the Primary Healthcare Fund (LN 49); the old level check was retired |
 | F08 | Blurred photo | Amber · retake requested, nothing guessed |
 | F09 | Rejected claim | Amber · claim rejected |
 
@@ -75,11 +75,11 @@ make deploy                 # build and deploy to Modal
 ```
 
 ## Limitations
-- **Rules are placeholders.** Rule IDs are cited with version `v[PLACEHOLDER]` until the SHA source documents are registered in `docs/SOURCES.md`. Lipwad never invents rule text.
+- **Rules are registered, not complete.** Every finding cites a rule from SHA Part A or B2 (Oct 2026), LN 49 of 2024 or the DHA HIE docs, quoted word for word in `docs/SOURCES.md`. Lipwad never invents rule text. Fund and facility-level rules wait for Phase 2.
 - **Mock HIE.** Submission and resubmission go to `MockHIE`, not the DHA sandbox.
 - **Voice notes are English only.** Kiswahili is not yet in Muse Voice Transcribe's language list.
 - **No in-app capture yet.** Taking photos and recording voice notes inside Lipwad (the Capture screen) is not built. The demo cases load synthetic photos and audio from `data/synthetic/`; everything after that, from reading to rescue, runs live.
-- **Not yet built:** SAM 3.1 segmentation, rules retrieval over a registered SHA corpus, and terminology coding. Codes are placeholders.
+- **Not yet built:** SAM 3.1 segmentation, rules retrieval over a registered SHA corpus, and terminology coding. Services show as "not coded" until SHA confirms its coding standard.
 - **Synthetic data only.** All documents are generated from ground truth by `backend/scripts/make_documents.py` and marked as synthetic.
 
 ## Credits

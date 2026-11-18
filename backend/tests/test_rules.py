@@ -1,23 +1,55 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
-from app.agent.rules import Evidence, check
-from app.db.schemas import Citation, Claim, Field
+import pytest
+
+from app.agent.rules import RULES, Evidence, check, rule
+from app.db.schemas import Citation, Claim, Field, Lifecycle
 
 CITE = [Citation(kind="image", source_id="u", region=[[0.1, 0.1], [0.2, 0.2]])]
+NOW = datetime(2026, 11, 3, tzinfo=UTC)
 
 
 def field(name: str, value: str) -> Field:
     return Field(name=name, value=value, confidence=1, citations=CITE)
 
 
-def codes(**values: str) -> set[str]:
+def flags_for(claim: Claim | None = None, **values: str):
     fields = {name: field(name, value) for name, value in values.items()}
-    flags = check(Claim(id="X"), Evidence(fields, [], True, 2), datetime(2026, 11, 3, tzinfo=UTC))
-    return {flag.code for flag in flags}
+    return check(claim or Claim(id="X"), Evidence(fields, [], True), NOW)
 
 
-def test_clinic_visit_is_not_mistaken_for_inpatient() -> None:
-    assert "service_outside_facility_level" not in codes(visit_type="Day clinic")
+def codes(**values: str) -> set[str]:
+    return {flag.code for flag in flags_for(**values)}
+
+
+def rules_cited(flag) -> set[str]:
+    return {c.source_id for c in flag.citations if c.kind == "rule"}
+
+
+def test_every_rule_names_its_source_status_and_exact_quote() -> None:
+    for rule_id, source in RULES.items():
+        assert source.status in {"final", "news", "lipwad"}, rule_id
+        assert source.quote and source.title and source.issuer, rule_id
+        if source.status != "lipwad":
+            assert source.url.startswith("https://"), rule_id
+            assert source.clause, rule_id
+
+
+def test_rule_citations_carry_the_version_and_quote() -> None:
+    citation = rule("SHA-A-13.5.2-RESUBMIT-14D")
+
+    assert citation.rule_version == "Part A, 16 Oct 2026"
+    assert citation.quote.startswith("The Healthcare Provider shall correct and resubmit")
+
+
+def test_nothing_in_the_catalogue_is_a_placeholder() -> None:
+    marker = "PLACE" + "HOLDER"  # spelled out so a repo-wide grep for the word stays clean
+    assert not any(marker in f"{key}{value}".upper() for key, value in RULES.items())
+
+
+def test_unknown_rule_is_refused() -> None:
+    with pytest.raises(KeyError):
+        rule("SHA-MADE-UP")
 
 
 def test_bedside_service_is_not_mistaken_for_bed_days() -> None:
@@ -26,10 +58,50 @@ def test_bedside_service_is_not_mistaken_for_bed_days() -> None:
     )
 
 
-def test_bed_days_on_an_outpatient_visit_are_flagged() -> None:
-    assert "service_type_inconsistent" in codes(
-        visit_type="Outpatient", invoice_line_1="Bed days x2: KSh 6000"
-    )
+def test_bed_days_on_an_outpatient_visit_cite_the_accuracy_clause() -> None:
+    flags = flags_for(visit_type="Outpatient", invoice_line_1="Bed days x2: KSh 6000")
+    flag = next(f for f in flags if f.code == "service_type_inconsistent")
+
+    assert rules_cited(flag) == {"SHA-A-13.1.2-ACCURATE"}
+
+
+def test_facility_level_is_not_checked_until_fund_rules_are_built() -> None:
+    assert "service_outside_facility_level" not in codes(visit_type="Inpatient")
+
+
+def test_unsigned_claim_form_cites_form_3() -> None:
+    flag = flags_for(clinician_signature="absent")[0]
+
+    assert flag.code == "signature_missing"
+    assert rules_cited(flag) == {"SHI-FORM3-FIELDS"}
+
+
+def test_invoice_without_items_cites_supporting_documents() -> None:
+    flag = flags_for(invoice_itemised="no")[0]
+
+    assert rules_cited(flag) == {"SHA-A-13.3.1-SUPPORTING-DOCS"}
+
+
+def test_unregistered_practitioner_cites_the_licensing_warranty() -> None:
+    fields = {"practitioner_id": field("practitioner_id", "PR-999")}
+    flag = check(Claim(id="X"), Evidence(fields, [], False), NOW)[0]
+
+    assert flag.code == "practitioner_not_found"
+    assert rules_cited(flag) == {"SHA-A-13.4.3-LICENSED"}
+
+
+def test_a_sent_back_claim_near_its_deadline_cites_clause_13_5_2() -> None:
+    claim = Claim(id="X", lifecycle=Lifecycle.RETURNED, returned_at=NOW - timedelta(days=13))
+    flag = next(f for f in flags_for(claim) if f.code == "resubmission_deadline_near")
+
+    assert rules_cited(flag) == {"SHA-A-13.5.2-RESUBMIT-14D"}
+
+
+def test_a_rejected_claim_cites_the_review_window_not_resubmission() -> None:
+    claim = Claim(id="X", lifecycle=Lifecycle.REJECTED, returned_at=NOW - timedelta(days=1))
+    flag = next(f for f in flags_for(claim) if f.code == "claim_rejected")
+
+    assert rules_cited(flag) == {"SHA-A-13.8.1-REVIEW-7WD"}
 
 
 def test_voice_and_form_dates_that_disagree_are_flagged_with_both_sources() -> None:
@@ -43,11 +115,12 @@ def test_voice_and_form_dates_that_disagree_are_flagged_with_both_sources() -> N
         "admission_date": field("admission_date", "2026-10-12"),
         "voice_admission_date": spoken,
     }
-    flags = check(Claim(id="X"), Evidence(fields, [], True, 3), datetime(2026, 11, 3, tzinfo=UTC))
+    flags = check(Claim(id="X"), Evidence(fields, [], True), NOW)
     flag = next(flag for flag in flags if flag.code == "admission_date_mismatch")
 
     assert flag.severity == "amber"
     assert {c.kind for c in flag.citations} == {"image", "audio", "rule"}
+    assert rules_cited(flag) == {"SHA-A-13.1.2-ACCURATE"}
 
 
 def test_matching_voice_and_form_dates_are_not_flagged() -> None:
@@ -57,12 +130,9 @@ def test_matching_voice_and_form_dates_are_not_flagged() -> None:
 
 
 def test_an_unclear_voice_note_asks_for_a_new_recording_not_a_photo() -> None:
-    from app.agent.rules import Evidence as Ev
-
     note = Citation(kind="audio", source_id="F06-voice_note", t_start=0, t_end=22.2)
-    flags = check(
-        Claim(id="X"), Ev({}, [], True, 3, voice_retake=note), datetime(2026, 11, 3, tzinfo=UTC)
-    )
+    flags = check(Claim(id="X"), Evidence({}, [], True, voice_retake=note), NOW)
 
     assert [f.code for f in flags] == ["voice_note_unclear"]
-    assert flags[0].citations == [note]
+    assert flags[0].citations[0] == note
+    assert rules_cited(flags[0]) == {"LIPWAD-EVIDENCE-QUALITY"}

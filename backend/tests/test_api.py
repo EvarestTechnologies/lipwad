@@ -138,12 +138,14 @@ def test_data_dir_has_case_documents() -> None:
     assert Path(DATA_DIR, "F05", "claim_form_signed.png").exists()
 
 
-def test_rules_catalogue_lists_placeholder_versions(client: TestClient) -> None:
-    rules = client.get("/api/rules").json()
+def test_rules_catalogue_lists_each_source_and_quote(client: TestClient) -> None:
+    rules = {rule["id"]: rule for rule in client.get("/api/rules").json()}
+    resubmit = rules["SHA-A-13.5.2-RESUBMIT-14D"]
 
-    assert {"id", "checks", "version", "source_registered"} <= set(rules[0])
-    assert all(rule["version"] == "v[PLACEHOLDER]" for rule in rules)
-    assert not any(rule["source_registered"] for rule in rules)
+    assert resubmit["status"] == "final"
+    assert resubmit["clause"] == "13.5.2, p. 54"
+    assert resubmit["url"].startswith("https://www.sha.go.ke/")
+    assert rules["LIPWAD-EVIDENCE-QUALITY"]["status"] == "lipwad"
 
 
 def test_today_feed_is_short(client: TestClient) -> None:

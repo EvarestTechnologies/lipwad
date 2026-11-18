@@ -1,5 +1,6 @@
 import hmac
 from contextlib import contextmanager
+from dataclasses import asdict
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -7,7 +8,7 @@ from fastapi.responses import FileResponse
 from pydantic import AwareDatetime, BaseModel, StringConstraints
 from sqlalchemy.exc import IntegrityError
 
-from app.agent.rules import RULE_VERSION, RULES
+from app.agent.rules import RULES
 from app.agent.run import RescueError, case_uploads, signed_upload
 from app.db.repository import StaleClaimError, list_activity, list_uploads, load_claim
 from app.db.schemas import Lifecycle, Readiness
@@ -20,10 +21,9 @@ ACTIONS = {
     "itemised_invoice_missing": "Snap the itemised invoice",
     "service_type_inconsistent": "Correct the service type to match the documents",
     "practitioner_not_found": "Confirm the practitioner's registration number",
-    "service_outside_facility_level": "Check the service against this facility's level",
     "retake_required": "Retake the photo in better light",
-    "resubmission_deadline_near": "Fix and resubmit before the window closes",
-    "claim_rejected": "Review the rejection and resubmit",
+    "resubmission_deadline_near": "Fix and resubmit the sent back claim before day 14",
+    "claim_rejected": "Request a review with new evidence within 7 working days",
     "admission_date_mismatch": "Confirm the admission date with the ward and correct it",
     "voice_note_unclear": "Record the voice note again somewhere quiet",
 }
@@ -173,10 +173,7 @@ def router(services: Services) -> APIRouter:
 
     @api.get("/rules")
     def rules() -> list[dict]:
-        return [
-            {"id": rule_id, "checks": checks, "version": RULE_VERSION, "source_registered": False}
-            for rule_id, checks in RULES.items()
-        ]
+        return [{"id": rule_id, **asdict(source)} for rule_id, source in RULES.items()]
 
     @api.get("/today")
     def today() -> dict:
@@ -220,7 +217,7 @@ def _confirmation(body: ConfirmBody) -> Confirmation:
 def _summary(claim) -> dict:
     values = {field.name: field.value for field in claim.fields}
     amount = values.get("invoice_total")
-    deadline: AwareDatetime | None = claim.resubmission_deadline
+    deadline: AwareDatetime | None = claim.resubmission_deadline or claim.review_deadline
     reasons = [flag.code for flag in claim.flags]
     return {
         "id": claim.id,

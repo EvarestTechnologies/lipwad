@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 
 import { api, type Rule } from "./api";
 
+const STATUS: Record<Rule["status"], string> = {
+  final: "Official, final as published",
+  news: "News report, context only",
+  lipwad: "Lipwad check, not an SHA rule",
+};
+
 export function RulesScreen() {
   const [rules, setRules] = useState<Rule[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -11,16 +17,25 @@ export function RulesScreen() {
     <div>
       <h1>SHA rules</h1>
       <p className="muted">
-        The checks Lipwad runs on every claim. Each flag cites one of these rule IDs with its version.
-        The SHA source documents are not registered yet, so the IDs and versions are placeholders, the
-        descriptions say what Lipwad checks, and no SHA rule text is quoted.
+        Every flag Lipwad raises cites one of these rules. Each quote is copied word for word from the
+        document named, and the status says how much weight it carries. Lipwad checks the paperwork
+        against them; it never decides a claim.
       </p>
       {error && <p className="error" role="alert">{error}</p>}
-      <ul className="rows">
+      <ul className="rules">
         {rules?.map((rule) => (
-          <li key={rule.id}>
-            <span className="who"><span className="mono">{rule.id}</span><span>{rule.checks}</span></span>
-            <span className="chip">{rule.version}</span>
+          <li key={rule.id} id={rule.id}>
+            <p className="mono">{rule.id} <span className="chip">{STATUS[rule.status]}</span></p>
+            <p>{rule.checks}</p>
+            <blockquote>“{rule.quote}”</blockquote>
+            {rule.url ? (
+              <p className="muted">
+                {rule.title}, {rule.issuer}. {rule.clause}. {rule.version}.{" "}
+                <a href={rule.url} target="_blank" rel="noreferrer">Open the source</a>
+              </p>
+            ) : (
+              <p className="muted">{rule.title}. {rule.version}.</p>
+            )}
           </li>
         ))}
       </ul>

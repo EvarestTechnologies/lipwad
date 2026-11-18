@@ -96,3 +96,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: none; box-
   .review-head { flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.rules { list-style: none; padding: 0; display: grid; gap: 12px; }
+.rules li { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 16px; }
+.rules li p { margin: 4px 0; }
+blockquote { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--signal); background: var(--chip-neutral-bg); color: var(--ink-body); font-size: 14px; line-height: 1.5; }
+.rule blockquote { background: transparent; color: var(--navy-text-soft); }
+.rule a { color: var(--signal); }

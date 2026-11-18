@@ -18,6 +18,7 @@ export type Claim = {
   coded_lines: Field[];
   flags: Flag[];
   resubmission_deadline: string | null;
+  review_deadline: string | null;
   submission_deadline: string | null;
 };
 export type Step = { claim_id: string; at: string; kind: string; text: string; model: string | null };
@@ -36,7 +37,17 @@ export type Summary = {
   rescue: boolean;
 };
 export type Today = { at_risk_ksh: number; tasks: Summary[]; activity: Step[] };
-export type Rule = { id: string; checks: string; version: string; source_registered: boolean };
+export type Rule = {
+  id: string;
+  title: string;
+  issuer: string;
+  version: string;
+  status: "final" | "news" | "lipwad";
+  url: string;
+  clause: string;
+  quote: string;
+  checks: string;
+};
 export type Draft = { reason: string[]; changes: { field: string; before: string | null; after: string }[] };
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -70,12 +81,14 @@ export const api = {
 export const ksh = (amount: number | null) =>
   amount === null ? "—" : `KSh ${amount.toLocaleString("en-KE")}`;
 
-export function timeLeft(deadline: string | null): string | null {
+/** A sent back claim has 14 days to resubmit; a rejected one has 7 working days to ask for review. */
+export function timeLeft(deadline: string | null, lifecycle: string): string | null {
   if (!deadline) return null;
+  const review = lifecycle === "rejected";
   const hours = Math.round((new Date(deadline).getTime() - Date.now()) / 3_600_000);
-  if (hours <= 0) return "Window closed";
-  if (hours < 48) return `${hours} hours left to resubmit`;
-  return `${Math.floor(hours / 24)} days left to resubmit`;
+  if (hours <= 0) return review ? "Review window closed" : "Resubmission window closed";
+  if (review) return hours < 48 ? `${hours} hours left to request a review` : `${Math.ceil(hours / 24)} days left to request a review`;
+  return hours < 48 ? `${hours} hours left of 14 days to resubmit` : `${Math.ceil(hours / 24)} of 14 days left to resubmit`;
 }
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;

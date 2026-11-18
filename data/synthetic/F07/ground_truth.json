@@ -6,19 +6,15 @@
   "practitioner_id": "PR-100",
   "service_type": "inpatient",
   "date_of_service": "2026-10-12",
-  "expected_status": "red",
-  "expected_reasons": [
-    "service_outside_facility_level"
-  ],
+  "expected_status": "green",
+  "expected_reasons": [],
   "fields": {
     "patient_name": "Akinyi Odhiambo [demo]",
     "admission_date": "2026-10-12",
     "discharge_date": "2026-10-14",
     "diagnosis": "Pneumonia, admitted for IV antibiotics"
   },
-  "codes": [
-    "PLACEHOLDER-001"
-  ],
+  "codes": [],
   "mock_hie_outcome": "accept",
   "mock_hie_reasons": [],
   "days_since_outcome": null,
@@ -43,5 +39,6 @@
     ]
   ],
   "invoice_itemised": true,
-  "form_signed": true
+  "form_signed": true,
+  "note": "Retired check. Under LN 49 of 2024 the Primary Healthcare Fund covers inpatient care at Level 2-4, so this claim is not flagged. Fund and facility-level checks wait for Phase 2."
 }

@@ -24,7 +24,7 @@ export function ClaimsScreen() {
                 <span className="muted">
                   {c.reasons[0] ? REASON_TEXT[c.reasons[0]] ?? c.reasons[0] : c.readiness ? "No issues found" : "Waiting for review"}
                 </span>
-                {c.deadline && <span className="deadline">{timeLeft(c.deadline)}</span>}
+                {c.deadline && <span className="deadline">{timeLeft(c.deadline, c.lifecycle)}</span>}
               </span>
               <StatusPill readiness={c.readiness} lifecycle={c.lifecycle} />
               <span className="money">{ksh(c.amount_ksh)}</span>

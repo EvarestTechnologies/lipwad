@@ -29,6 +29,7 @@ from app.tools.listen import NoteInput, transcribe_note
 
 DOCUMENTS = ("claim_form", "invoice")
 VOICE_NOTE = "voice_note.wav"
+NOT_CODED = "not coded"  # no code is assigned until SHA's coding standard is confirmed
 
 EXPLAIN_PROMPT = (
     "You write for a hospital claims clerk in Kenya who prepares claims for SHA. Given "
@@ -122,8 +123,6 @@ class ClaimAgent:
 
         practitioner = fields.get("practitioner_id")
         found = self._hie.lookup_practitioner(practitioner.value).found if practitioner else None
-        facility = fields.get("facility_id")
-        level = self._hie.lookup_facility(facility.value).level if facility else None
         if practitioner:
             self._log(
                 session,
@@ -135,15 +134,15 @@ class ClaimAgent:
                 practitioner.citations,
             )
 
-        flags = check(claim, Evidence(fields, retake, found, level, voice_retake), self._clock())
+        flags = check(claim, Evidence(fields, retake, found, voice_retake), self._clock())
         coded = []
         if "diagnosis" in fields:
             coded.append(
                 Field(
                     name="service_code",
-                    value="PLACEHOLDER-001",
+                    value=NOT_CODED,
                     confidence=fields["diagnosis"].confidence,
-                    citations=[*fields["diagnosis"].citations, rule("TERM-PLACEHOLDER")],
+                    citations=[*fields["diagnosis"].citations, rule("LIPWAD-CODING-PENDING")],
                 )
             )
         claim = claim.model_copy(
@@ -249,9 +248,7 @@ class ClaimAgent:
                 fields[field.name] = field
         practitioner = fields.get("practitioner_id")
         found = self._hie.lookup_practitioner(practitioner.value).found if practitioner else None
-        facility = fields.get("facility_id")
-        level = self._hie.lookup_facility(facility.value).level if facility else None
-        flags = check(claim, Evidence(fields, result.retake_reasons, found, level), self._clock())
+        flags = check(claim, Evidence(fields, result.retake_reasons, found), self._clock())
         # The corrected page only speaks for the claim form; keep what other evidence raised.
         kept = [f for f in claim.flags if f.code in OTHER_EVIDENCE_FLAGS]
         flags += [f for f in kept if f.code not in {flag.code for flag in flags}]

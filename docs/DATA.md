@@ -24,7 +24,7 @@ Stored under `data/synthetic/<case_id>/` with `ground_truth.json`.
 | F04 | Practitioner not found in registry | Level 4 | Red | Practitioner validation failed |
 | F05 | Returned claim, day 13 of 14 | Level 4 | Amber + countdown | Rescue flow, one day left |
 | F06 | Dates disagree across documents | Level 3 | Amber | Admission date mismatch (both sources cited) |
-| F07 | Service outside facility level | Level 2 | Red | Not covered at this facility level |
+| F07 | Inpatient care at a Level 2 facility | Level 2 | Green | Retired: LN 49 covers inpatient care at Level 2-4 under the Primary Healthcare Fund. Fund checks wait for Phase 2. |
 | F08 | Blurry photo, key field unreadable | Level 3 | Amber | Retake requested, no guessing |
 | F09 | Rejected claim with stated reason | Level 4 | Rescue | Fix drafted with rule cited |
 

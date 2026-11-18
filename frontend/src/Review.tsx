@@ -63,7 +63,7 @@ export function Review({ claimId }: { claimId: string }) {
         <div>
           <h1>{patient}</h1>
           <StatusPill readiness={claim.readiness} lifecycle={claim.lifecycle} />
-          {claim.resubmission_deadline && <span className="deadline"> {timeLeft(claim.resubmission_deadline)}</span>}
+          {(claim.resubmission_deadline ?? claim.review_deadline) && <span className="deadline"> {timeLeft(claim.resubmission_deadline ?? claim.review_deadline, claim.lifecycle)}</span>}
         </div>
         {!withSha && !(rescue && corrected) && (
           <button className="secondary" disabled={busy !== null} onClick={() => act("run", () => api.run(claim.id))}>
@@ -98,7 +98,8 @@ export function Review({ claimId }: { claimId: string }) {
           {selected?.citation.kind === "rule" ? (
             <div className="rule">
               <p className="mono">{selected.citation.source_id} · {selected.citation.rule_version}</p>
-              <p>Rule text is a placeholder until the SHA source document is registered in docs/SOURCES.md.</p>
+              {selected.citation.quote && <blockquote>“{selected.citation.quote}”</blockquote>}
+              <p><Link to="/rules">See the source and status on the Rules page</Link></p>
             </div>
           ) : selected?.citation.kind === "audio" ? (
             <VoiceClip citation={selected.citation} />

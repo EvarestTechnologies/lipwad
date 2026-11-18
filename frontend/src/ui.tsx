@@ -14,7 +14,7 @@ export function StatusPill({ readiness, lifecycle }: { readiness: Claim["readine
     return <span className="pill sha"><span aria-hidden="true">→</span> With SHA</span>;
   }
   if (lifecycle === "returned" || lifecycle === "rejected") {
-    return <span className="pill blocked"><span aria-hidden="true">↺</span> {lifecycle === "returned" ? "Returned" : "Rejected"}</span>;
+    return <span className="pill blocked"><span aria-hidden="true">↺</span> {lifecycle === "returned" ? "Sent back" : "Rejected"}</span>;
   }
   if (!readiness) return <span className="pill neutral">Not reviewed</span>;
   const status = STATUS[readiness];
@@ -30,10 +30,9 @@ export const REASON_TEXT: Record<string, string> = {
   itemised_invoice_missing: "The invoice shows a total only. SHA needs each service listed.",
   service_type_inconsistent: "The invoice bills inpatient bed days, but the form records an outpatient visit.",
   practitioner_not_found: "The practitioner number is not in the registry. Check it with the ward.",
-  service_outside_facility_level: "Inpatient care is billed at a facility level that does not cover it.",
   retake_required: "The photo is too unclear to read. Retake it in better light.",
-  resubmission_deadline_near: "SHA returned this claim and the resubmission window closes soon.",
-  claim_rejected: "SHA rejected this claim. Review the reason and resubmit.",
+  resubmission_deadline_near: "SHA sent this claim back. Fix and resubmit it within 14 days of the date it was returned.",
+  claim_rejected: "SHA rejected this claim. You have 7 working days to request a review with new evidence.",
   voice_note_unclear: "The voice note could not be heard. Record it again somewhere quiet.",
   admission_date_mismatch: "The voice note gives a different admission date from the claim form. Confirm it with the ward.",
 };
@@ -71,9 +70,8 @@ const SHORT_REASON: Record<string, string> = {
   itemised_invoice_missing: "invoice not itemised",
   service_type_inconsistent: "service type does not match the documents",
   practitioner_not_found: "practitioner not in the registry",
-  service_outside_facility_level: "service outside this facility's level",
   retake_required: "photo too unclear to read",
-  resubmission_deadline_near: "resubmission window closing",
+  resubmission_deadline_near: "sent back, 14-day window closing",
   claim_rejected: "rejected by SHA",
   admission_date_mismatch: "admission dates disagree",
   voice_note_unclear: "voice note could not be heard",

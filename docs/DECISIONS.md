@@ -4,12 +4,12 @@ Choices that resolve gaps or conflicts in the spec. Change one here before chang
 
 | Topic | Decision | Reason |
 |---|---|---|
-| SHA rules | Placeholder rules marked `v[PLACEHOLDER]` until `SOURCES.md` is filled. Tests assert reason codes, not rule text. | Rule text may only come from registered sources. |
+| SHA rules | Every finding cites a rule registered in `SOURCES.md` with its source, status (final, news or lipwad) and exact quote. Sources are SHA Part A and Part B2 (Oct 2026), LN 49 of 2024 and the DHA HIE docs. Evidence-quality flags cite a Lipwad check, never an SHA rule; news is context only. | Rule text may only come from registered sources, and a reader must see how much weight each one carries. |
 | Test data | Each case has `ground_truth.json` and fixture model responses, so the suite runs without media or network. | Tests must be deterministic and free. |
 | F05 colour | The claim stays amber; its countdown chip turns red under 48 hours. | `DATA.md` expects amber, and the design reserves red for imminent deadlines. |
 | Claim state | Lifecycle (draft, submitted, returned, rejected, paid) is stored separately from readiness (green, amber, red). | F09 is a lifecycle state, not a colour. |
 | Offline capture | Out of scope for v1. | The PRD excludes offline mode; this overrides `DESIGN_PROMPT.md`. |
-| Terminology | Placeholder codes behind `lookup_terminology` until the HIE code system is confirmed. | `TERM-01` in `SOURCES.md` is blank. |
+| Terminology | No codes are assigned. The service shows as "not coded", cited to LIPWAD-CODING-PENDING, until SHA confirms its coding standard (Phase 2). | Lipwad never invents a code. |
 | Retrieval | Keyword ranking uses SQLite FTS5. Embeddings go through the model client layer. | Hybrid search without a new search dependency. |
 | Reason messages | A static catalogue of reason codes with English and Kiswahili text. | Reason text must be predictable and reviewable. |
 | Access | One demo user, no authentication. | Multi-user accounts are out of scope. |
@@ -24,3 +24,6 @@ Choices that resolve gaps or conflicts in the spec. Change one here before chang
 | Demo restore | `make snapshot` saves the reviewed demo; a restore copies it back and moves every stored time forward by the time since the snapshot, so F05 stays on day 13 of 14. With no snapshot, a restore reseeds the cases. | A plain reseed would leave Today empty and spend the run budget re-reviewing. |
 | Corrected pages on drafts | A draft with a corrected page on file (F01) can read it, fixing only the fields that changed, and is then submitted normally. Resubmission stays limited to returned or rejected claims. | Makes "snap the signed page" completable before Capture exists, without letting a draft skip submission. |
 
+## Registered SHA rules (Nov 2026)
+- **Sent back and rejected are different.** A sent back claim has 14 days to be corrected and resubmitted (Part A 13.5.2); the countdown shows days left out of 14. A rejected claim has 7 working days to request a review with new evidence (Part A 13.8.1). Working days skip weekends; Kenyan public holidays are not yet excluded.
+- **Facility-level check retired.** Lipwad flagged inpatient care below level 3 as red. LN 49 of 2024 gives inpatient access at Level 2-4 under the Primary Healthcare Fund and Level 4-6 under SHIF, so the check was wrong and is removed. F07 is kept as a documented case that is not flagged. Fund and facility-level checks wait for Phase 2, because the two funds overlap at Level 4 and no official text says whether a claim to the wrong fund is rejected or sent back.

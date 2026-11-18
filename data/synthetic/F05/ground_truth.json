@@ -16,9 +16,7 @@
     "discharge_date": "2026-10-14",
     "diagnosis": "Pneumonia, admitted for IV antibiotics"
   },
-  "codes": [
-    "PLACEHOLDER-001"
-  ],
+  "codes": [],
   "mock_hie_outcome": "return",
   "mock_hie_reasons": [
     "signature_missing"

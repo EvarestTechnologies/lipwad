@@ -64,7 +64,7 @@ export function TodayScreen() {
               </div>
               <strong>{patientName(task.patient_name, true)}</strong>
               <p>{REASON_TEXT[task.reasons[0]] ?? task.reasons[0]}</p>
-              {task.deadline && <p className="deadline">{timeLeft(task.deadline)}</p>}
+              {task.deadline && <p className="deadline">{timeLeft(task.deadline, task.lifecycle)}</p>}
               <button onClick={() => navigate(`/claims/${task.id}`)}>{task.rescue ? "Open rescue" : "Fix this claim"}</button>
             </li>
           ))}
