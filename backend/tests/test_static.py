@@ -44,3 +44,34 @@ def test_unknown_api_route_is_not_swallowed_by_the_app_shell(tmp_path: Path) -> 
 
 def test_api_only_without_a_built_frontend() -> None:
     assert TestClient(create_app(None)).get("/").status_code == 404
+
+
+def test_the_shell_and_worker_files_are_always_revalidated(tmp_path: Path) -> None:
+    folder = built_frontend(tmp_path)
+    for name in ("sw.js", "registerSW.js", "manifest.webmanifest"):
+        (folder / name).write_text("// built")
+    client = TestClient(create_app(folder))
+
+    for path in (
+        "/",
+        "/claims/C01",
+        "/index.html",
+        "/sw.js",
+        "/registerSW.js",
+        "/manifest.webmanifest",
+    ):
+        assert client.get(path).headers["cache-control"] == "no-cache", path
+
+
+def test_hashed_assets_are_cached_for_a_year(tmp_path: Path) -> None:
+    client = TestClient(create_app(built_frontend(tmp_path)))
+
+    assert client.get("/assets/app.js").headers["cache-control"] == (
+        "public, max-age=31536000, immutable"
+    )
+
+
+def test_api_responses_get_no_asset_caching(tmp_path: Path) -> None:
+    client = TestClient(create_app(built_frontend(tmp_path)))
+
+    assert "immutable" not in client.get("/api/health").headers.get("cache-control", "")

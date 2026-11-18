@@ -1,32 +1,30 @@
 import hmac
 from contextlib import contextmanager
+from dataclasses import asdict
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import AwareDatetime, BaseModel, StringConstraints
 from sqlalchemy.exc import IntegrityError
 
-from app.agent.rules import RULE_VERSION, RULES
-from app.agent.run import RescueError, case_uploads, signed_upload
-from app.db.repository import StaleClaimError, list_activity, list_uploads, load_claim
+from app.agent.rules import RULES
+from app.agent.run import EXPLANATION_MISSING, RescueError, case_uploads, signed_upload
+from app.agent.steps import FIX_STEPS
+from app.db.repository import (
+    StaleClaimError,
+    list_activity,
+    list_audit,
+    list_uploads,
+    load_claim,
+    supersede_explanations,
+)
 from app.db.schemas import Lifecycle, Readiness
 from app.db.tables import ClaimRow, UploadRow
 from app.hie.base import Confirmation, HieDuplicateClaimError, HieEditRefusedError
 from app.services import ClaimBusyError, Services
 
-ACTIONS = {
-    "signature_missing": "Ask the clinician to sign, then snap the signed page",
-    "itemised_invoice_missing": "Snap the itemised invoice",
-    "service_type_inconsistent": "Correct the service type to match the documents",
-    "practitioner_not_found": "Confirm the practitioner's registration number",
-    "service_outside_facility_level": "Check the service against this facility's level",
-    "retake_required": "Retake the photo in better light",
-    "resubmission_deadline_near": "Fix and resubmit before the window closes",
-    "claim_rejected": "Review the rejection and resubmit",
-    "admission_date_mismatch": "Confirm the admission date with the ward and correct it",
-    "voice_note_unclear": "Record the voice note again somewhere quiet",
-}
+ACTIONS = FIX_STEPS
 
 TODAY_FEED = 8
 
@@ -36,6 +34,16 @@ BUDGET_SPENT = (
     "Lipwad has used today's demo allowance of model runs. Everything already reviewed "
     "can still be opened; new reviews resume tomorrow."
 )
+
+
+SUPERSEDE_REASON = (
+    "Written before the explanation safety fix: the model could improvise advice from "
+    "field values. Hidden from the claim feed; kept here for the record."
+)
+
+
+class SupersedeBody(BaseModel):
+    before: AwareDatetime
 
 
 class ConfirmBody(BaseModel):
@@ -151,6 +159,19 @@ def router(services: Services) -> APIRouter:
             session.commit()
             return detail(session, claim_id)
 
+    @api.get("/claims/{claim_id}/audit")
+    def audit(claim_id: str) -> JSONResponse:
+        """The claim's full history as one file: every read, value, flag and confirmation."""
+        with services.sessions() as session:
+            if load_claim(session, claim_id) is None:
+                raise HTTPException(status_code=404, detail=f"unknown claim {claim_id}")
+            events = [e.model_dump(mode="json") for e in list_audit(session, claim_id)]
+        body = {"claim_id": claim_id, "exported_at": _now().isoformat(), "events": events}
+        return JSONResponse(
+            body,
+            headers={"Content-Disposition": f'attachment; filename="lipwad-audit-{claim_id}.json"'},
+        )
+
     @api.get("/uploads/{upload_id}/image")
     @api.get("/uploads/{upload_id}/file")
     def upload_file(upload_id: str) -> FileResponse:
@@ -160,6 +181,28 @@ def router(services: Services) -> APIRouter:
                 raise HTTPException(status_code=404)
             media = "audio/wav" if row.path.endswith(".wav") else "image/png"
             return FileResponse(row.path, media_type=media)
+
+    @admin.get("/health/reasoning")
+    def reasoning_health() -> JSONResponse:
+        """Whether the reasoning model answers; 503 when it does not."""
+        if services.reasoning_probe is None:
+            raise HTTPException(status_code=404)
+        result = services.reasoning_probe.check()
+        return JSONResponse(result, status_code=200 if result["status"] == "ok" else 503)
+
+    @admin.post("/demo/supersede-explanations", include_in_schema=False)
+    def supersede(body: SupersedeBody, x_admin_key: Annotated[str | None, Header()] = None) -> dict:
+        """Hide explanations written before a time, keeping them in the audit trail."""
+        if not services.admin_key or services.demo is None:
+            raise HTTPException(status_code=404)
+        if not x_admin_key or not hmac.compare_digest(x_admin_key, services.admin_key):
+            raise HTTPException(status_code=403)
+        with services.sessions() as session:
+            count = supersede_explanations(
+                session, body.before, _now(), SUPERSEDE_REASON, EXPLANATION_MISSING
+            )
+            session.commit()
+        return {"superseded": count}
 
     @admin.post("/demo/snapshot", include_in_schema=False)
     def snapshot(x_admin_key: Annotated[str | None, Header()] = None) -> dict:
@@ -173,10 +216,7 @@ def router(services: Services) -> APIRouter:
 
     @api.get("/rules")
     def rules() -> list[dict]:
-        return [
-            {"id": rule_id, "checks": checks, "version": RULE_VERSION, "source_registered": False}
-            for rule_id, checks in RULES.items()
-        ]
+        return [{"id": rule_id, **asdict(source)} for rule_id, source in RULES.items()]
 
     @api.get("/today")
     def today() -> dict:
@@ -211,6 +251,12 @@ def _corrected(claim: dict) -> bool:
     )
 
 
+def _now():
+    from datetime import UTC, datetime
+
+    return datetime.now(UTC)
+
+
 def _confirmation(body: ConfirmBody) -> Confirmation:
     from datetime import UTC, datetime
 
@@ -220,8 +266,8 @@ def _confirmation(body: ConfirmBody) -> Confirmation:
 def _summary(claim) -> dict:
     values = {field.name: field.value for field in claim.fields}
     amount = values.get("invoice_total")
-    deadline: AwareDatetime | None = claim.resubmission_deadline
-    reasons = [flag.code for flag in claim.flags]
+    deadline: AwareDatetime | None = claim.resubmission_deadline or claim.review_deadline
+    reasons = [flag.code for flag in claim.flags if flag.severity != "note"]
     return {
         "id": claim.id,
         "patient_name": values.get("patient_name"),

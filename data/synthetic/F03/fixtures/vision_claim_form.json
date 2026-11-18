@@ -5,10 +5,10 @@
       "value": "Otieno Ouma",
       "confidence": 0.99,
       "bbox": [
-        0.411,
-        0.218,
-        0.594,
-        0.245
+        0.41,
+        0.211,
+        0.585,
+        0.232
       ],
       "quote": "Otieno Ouma"
     },
@@ -17,10 +17,10 @@
       "value": "PT-006",
       "confidence": 0.99,
       "bbox": [
-        0.411,
-        0.266,
-        0.518,
-        0.29
+        0.41,
+        0.261,
+        0.507,
+        0.283
       ],
       "quote": "PT-006"
     },
@@ -29,10 +29,10 @@
       "value": "Outpatient",
       "confidence": 0.99,
       "bbox": [
-        0.411,
-        0.32,
-        0.56,
-        0.346
+        0.41,
+        0.312,
+        0.556,
+        0.335
       ],
       "quote": "Outpatient"
     },
@@ -41,10 +41,10 @@
       "value": "2026-10-12",
       "confidence": 0.99,
       "bbox": [
-        0.411,
-        0.372,
-        0.575,
-        0.397
+        0.41,
+        0.364,
+        0.555,
+        0.387
       ],
       "quote": "2026-10-12"
     },
@@ -53,10 +53,10 @@
       "value": "2026-10-12",
       "confidence": 0.99,
       "bbox": [
-        0.411,
-        0.425,
-        0.575,
-        0.451
+        0.41,
+        0.415,
+        0.555,
+        0.437
       ],
       "quote": "2026-10-12"
     },
@@ -65,10 +65,10 @@
       "value": "Fever and cough, malaria test negative",
       "confidence": 0.99,
       "bbox": [
-        0.411,
-        0.482,
-        0.883,
-        0.511
+        0.41,
+        0.47,
+        0.916,
+        0.496
       ],
       "quote": "Fever and cough, malaria test negative"
     },
@@ -77,10 +77,10 @@
       "value": "Dr. Amani Otieno",
       "confidence": 0.99,
       "bbox": [
-        0.411,
-        0.538,
-        0.649,
-        0.564
+        0.41,
+        0.522,
+        0.635,
+        0.546
       ],
       "quote": "Dr. Amani Otieno"
     },
@@ -89,10 +89,10 @@
       "value": "PR-100",
       "confidence": 0.99,
       "bbox": [
-        0.411,
-        0.594,
-        0.51,
-        0.617
+        0.41,
+        0.576,
+        0.509,
+        0.599
       ],
       "quote": "PR-100"
     },
@@ -101,20 +101,27 @@
       "value": "FAC-L3",
       "confidence": 0.99,
       "bbox": [
-        0.238,
-        0.113,
-        0.326,
-        0.131
+        0.232,
+        0.108,
+        0.324,
+        0.128
       ],
       "quote": "FAC-L3"
     }
   ],
-  "signature_present": true,
-  "signature_bbox": [
-    0.42,
-    0.775,
-    0.835,
-    0.818
+  "declaration_signed": true,
+  "declaration_bbox": [
+    0.199,
+    0.76,
+    0.566,
+    0.8
+  ],
+  "stamp_present": true,
+  "stamp_bbox": [
+    0.641,
+    0.743,
+    0.879,
+    0.858
   ],
   "unreadable": []
 }

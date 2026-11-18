@@ -8,7 +8,7 @@
   "date_of_service": "2026-10-12",
   "expected_status": "amber",
   "expected_reasons": [
-    "signature_missing"
+    "declaration_unsigned"
   ],
   "fields": {
     "patient_name": "Kiprono Langat [demo]",
@@ -16,9 +16,7 @@
     "discharge_date": "2026-10-14",
     "diagnosis": "Pneumonia, admitted for IV antibiotics"
   },
-  "codes": [
-    "PLACEHOLDER-001"
-  ],
+  "codes": [],
   "mock_hie_outcome": "accept",
   "mock_hie_reasons": [],
   "days_since_outcome": null,

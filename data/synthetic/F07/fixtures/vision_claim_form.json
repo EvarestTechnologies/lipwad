@@ -5,10 +5,10 @@
       "value": "Akinyi Odhiambo",
       "confidence": 0.99,
       "bbox": [
-        0.417,
-        0.22,
-        0.64,
-        0.245
+        0.41,
+        0.225,
+        0.612,
+        0.246
       ],
       "quote": "Akinyi Odhiambo"
     },
@@ -17,9 +17,9 @@
       "value": "PT-010",
       "confidence": 0.99,
       "bbox": [
-        0.419,
-        0.272,
-        0.508,
+        0.41,
+        0.275,
+        0.498,
         0.295
       ],
       "quote": "PT-010"
@@ -29,10 +29,10 @@
       "value": "Inpatient",
       "confidence": 0.99,
       "bbox": [
-        0.419,
-        0.32,
+        0.41,
+        0.327,
         0.53,
-        0.345
+        0.349
       ],
       "quote": "Inpatient"
     },
@@ -41,10 +41,10 @@
       "value": "2026-10-12",
       "confidence": 0.99,
       "bbox": [
-        0.419,
-        0.37,
-        0.575,
-        0.394
+        0.41,
+        0.38,
+        0.554,
+        0.4
       ],
       "quote": "2026-10-12"
     },
@@ -53,10 +53,10 @@
       "value": "2026-10-14",
       "confidence": 0.99,
       "bbox": [
-        0.419,
-        0.42,
-        0.573,
-        0.444
+        0.41,
+        0.432,
+        0.554,
+        0.453
       ],
       "quote": "2026-10-14"
     },
@@ -65,10 +65,10 @@
       "value": "Pneumonia, admitted for IV antibiotics",
       "confidence": 0.98,
       "bbox": [
-        0.419,
-        0.473,
-        0.892,
-        0.5
+        0.41,
+        0.486,
+        0.888,
+        0.51
       ],
       "quote": "Pneumonia, admitted for IV antibiotics"
     },
@@ -77,10 +77,10 @@
       "value": "Dr. Amani Otieno",
       "confidence": 0.99,
       "bbox": [
-        0.419,
-        0.527,
-        0.631,
-        0.551
+        0.41,
+        0.54,
+        0.633,
+        0.563
       ],
       "quote": "Dr. Amani Otieno"
     },
@@ -89,32 +89,39 @@
       "value": "PR-100",
       "confidence": 0.99,
       "bbox": [
-        0.419,
-        0.58,
-        0.508,
-        0.603
+        0.41,
+        0.593,
+        0.499,
+        0.614
       ],
       "quote": "PR-100"
     },
     {
       "name": "facility_id",
       "value": "FAC-L2",
-      "confidence": 0.99,
+      "confidence": 0.98,
       "bbox": [
-        0.242,
+        0.223,
         0.11,
-        0.327,
+        0.31,
         0.128
       ],
       "quote": "FAC-L2"
     }
   ],
-  "signature_present": true,
-  "signature_bbox": [
-    0.418,
-    0.766,
-    0.808,
-    0.806
+  "declaration_signed": true,
+  "declaration_bbox": [
+    0.205,
+    0.767,
+    0.568,
+    0.799
+  ],
+  "stamp_present": true,
+  "stamp_bbox": [
+    0.642,
+    0.749,
+    0.882,
+    0.866
   ],
   "unreadable": []
 }

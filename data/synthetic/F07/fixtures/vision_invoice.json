@@ -5,49 +5,53 @@
       "amount": 6000,
       "bbox": [
         60,
-        285,
-        855,
-        305
-      ]
+        278,
+        859,
+        304
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "IV antibiotics",
       "amount": 4500,
       "bbox": [
-        60,
-        333,
-        855,
-        353
-      ]
+        62,
+        326,
+        858,
+        351
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Chest X-ray",
       "amount": 2500,
       "bbox": [
-        60,
-        378,
-        855,
-        398
-      ]
+        62,
+        375,
+        858,
+        399
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Consultation",
       "amount": 1500,
       "bbox": [
-        60,
-        425,
-        855,
-        445
-      ]
+        62,
+        423,
+        857,
+        447
+      ],
+      "has_tariff_code": false
     }
   ],
   "total": {
     "amount": 14500,
     "bbox": [
       60,
-      505,
-      865,
-      522
+      506,
+      868,
+      530
     ]
   },
   "itemised": true,

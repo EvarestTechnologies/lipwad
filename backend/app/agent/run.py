@@ -6,15 +6,34 @@ never sets the status, so it cannot turn a blocked claim green.
 """
 
 import json
+import logging
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.agent.documents import BASELINE, present_types
 from app.agent.rules import Evidence, check, rule
-from app.db.repository import add_activity, list_uploads, load_claim, save_claim, save_upload
-from app.db.schemas import ActivityStep, Citation, Field, Lifecycle, Readiness, Upload
+from app.agent.steps import FIX_STEPS
+from app.db.repository import (
+    add_activity,
+    add_audit,
+    list_uploads,
+    load_claim,
+    save_claim,
+    save_upload,
+)
+from app.db.schemas import (
+    ActivityStep,
+    AuditEvent,
+    Citation,
+    Field,
+    Flag,
+    Lifecycle,
+    Readiness,
+    Upload,
+)
 from app.hie.base import ClaimPatch, Confirmation, HieAdapter
 from app.models import (
     ChatMessage,
@@ -27,15 +46,21 @@ from app.models.transcribe import Transcriber, audio_seconds
 from app.tools.intake import DocumentInput, extract_document
 from app.tools.listen import NoteInput, transcribe_note
 
-DOCUMENTS = ("claim_form", "invoice")
+DOCUMENTS = ("claim_form", "invoice", "discharge_summary", "case_summary")
 VOICE_NOTE = "voice_note.wav"
+EXPLANATION_MISSING = "Explanation not available in this demo run."
+log = logging.getLogger(__name__)
+NOT_CODED = "not coded"  # no code is assigned until SHA's coding standard is confirmed
 
 EXPLAIN_PROMPT = (
-    "You write for a hospital claims clerk in Kenya who prepares claims for SHA. Given "
-    "the extracted fields, the status and the findings, tell the clerk what to do next "
-    "to get this claim paid. At most two short sentences, plain words, no field names "
-    "in snake_case. You never give clinical advice, never suggest adding or upgrading "
-    "services, and never tell the clerk to approve or pay a claim: SHA does that. "
+    "You help a hospital claims clerk in Kenya who prepares claims for SHA. You are given "
+    "the claim's status and the steps Lipwad has already chosen. Restate those steps for "
+    "the clerk in at most two short sentences of plain English, then give the same in "
+    "Kiswahili. Use only the steps given. Never add a step, value, date, amount, code, "
+    "service or reason; never say which document or value is right; never tell the clerk "
+    "to add, remove or change a charge, a service or a code; never give clinical advice; "
+    "and never say a claim will be approved or paid. If there are no steps, say the claim "
+    "is ready for a person to check against its sources and submit. "
     'Return JSON only: {"explanation_en": English text, "explanation_sw": the same in '
     "Kiswahili}."
 )
@@ -93,18 +118,20 @@ class ClaimAgent:
         fields: dict[str, Field] = {}
         retake: list[str] = []
         voice_retake: Citation | None = None
+        voice_review: list[Citation] = []
         for upload in uploads:
             if upload.id not in known:
                 save_upload(session, upload)
             if upload.kind == "audio":
-                voice_retake = self._listen(session, case_id, upload, fields)
+                voice_retake = self._listen(session, case_id, upload, fields, voice_review)
                 continue
-            kind = "invoice" if upload.filename == "invoice.png" else "claim_form"
+            kind = DOCUMENT_KINDS.get(upload.filename, "claim_form")
             result = extract_document(
                 DocumentInput(upload=upload, case_id=case_id, kind=kind), self._vision
             )
             fields.update({field.name: field for field in result.fields})
             retake += result.retake_reasons
+            self._audit_read(session, case_id, upload, result.fields, result.model)
             self._log(
                 session,
                 case_id,
@@ -122,8 +149,6 @@ class ClaimAgent:
 
         practitioner = fields.get("practitioner_id")
         found = self._hie.lookup_practitioner(practitioner.value).found if practitioner else None
-        facility = fields.get("facility_id")
-        level = self._hie.lookup_facility(facility.value).level if facility else None
         if practitioner:
             self._log(
                 session,
@@ -135,15 +160,25 @@ class ClaimAgent:
                 practitioner.citations,
             )
 
-        flags = check(claim, Evidence(fields, retake, found, level, voice_retake), self._clock())
+        on_file = present_types(_original_name(upload.filename) for upload in uploads)
+        evidence = Evidence(
+            fields,
+            retake,
+            found,
+            voice_retake,
+            voice_review=voice_review,
+            documents_present=on_file,
+        )
+        flags = check(claim, evidence, self._clock())
+        self._audit_flags(session, case_id, claim.flags, flags)
         coded = []
         if "diagnosis" in fields:
             coded.append(
                 Field(
                     name="service_code",
-                    value="PLACEHOLDER-001",
+                    value=NOT_CODED,
                     confidence=fields["diagnosis"].confidence,
-                    citations=[*fields["diagnosis"].citations, rule("TERM-PLACEHOLDER")],
+                    citations=[*fields["diagnosis"].citations, rule("LIPWAD-CODING-PENDING")],
                 )
             )
         claim = claim.model_copy(
@@ -163,8 +198,11 @@ class ClaimAgent:
         )
         self._explain(session, claim)
 
-    def _listen(self, session, case_id, upload, fields) -> Citation | None:
-        """Hear a voice note into `fields`; return a re-record citation if it was not heard."""
+    def _listen(self, session, case_id, upload, fields, review) -> Citation | None:
+        """Hear a voice note into `fields` and segments for human review into `review`.
+
+        Returns a re-record citation if the note was not heard.
+        """
         whole_note = Citation(
             kind="audio",
             source_id=upload.id,
@@ -180,6 +218,8 @@ class ClaimAgent:
             self._log(session, case_id, "read", f"Voice note could not be heard: {error}", None, [])
             return whole_note
         fields.update({field.name: field for field in result.fields})
+        review.extend(result.review)
+        self._audit_read(session, case_id, upload, result.fields, result.model)
         heard = "; ".join(f'"{c.quote}"' for f in result.fields for c in f.citations)
         self._log(
             session,
@@ -187,17 +227,27 @@ class ClaimAgent:
             "read",
             f"Heard voice note: {_count(len(result.fields), 'cited value')}"
             + (f" ({heard})" if heard else "")
-            + (f"; {'; '.join(result.retake_reasons)}" if result.retake_reasons else ""),
+            + (f"; {'; '.join(result.retake_reasons)}" if result.retake_reasons else "")
+            + (
+                f"; {_count(len(result.review), 'segment')} not in English, sent for human review"
+                if result.review
+                else ""
+            ),
             result.model,
             [c for field in result.fields for c in field.citations],
         )
         return whole_note if result.retake_reasons else None
 
     def _explain(self, session: Session, claim) -> None:
+        # Only the status and Lipwad's own wording: no field values to improvise from, and
+        # no notes, which are not steps.
         payload = {
-            "fields": {field.name: field.value for field in claim.fields},
             "status": claim.readiness.value,
-            "findings": [flag.code for flag in claim.flags],
+            "steps": [
+                FIX_STEPS.get(flag.code, flag.code)
+                for flag in claim.flags
+                if flag.severity != "note"
+            ],
         }
         request = ChatRequest(
             case_id=claim.id,
@@ -220,7 +270,8 @@ class ClaimAgent:
             TypeError,
             AttributeError,
         ) as error:
-            self._log(session, claim.id, "decide", f"Explanation unavailable: {error}", None, [])
+            log.warning("explanation unavailable for %s: %s", claim.id, error)
+            self._log(session, claim.id, "decide", EXPLANATION_MISSING, None, [])
 
     def rescue(self, session: Session, case_id: str, upload: Upload) -> dict:
         """Re-read a corrected page and redo the checks. Only evidence changes the claim."""
@@ -231,7 +282,9 @@ class ClaimAgent:
             raise RescueError(f"{case_id} already has its corrected page")
         if claim.lifecycle is Lifecycle.DRAFT and claim.readiness is None:
             raise RescueError(f"Review {case_id} before adding a corrected page")
-        reasons = [flag.code for flag in claim.flags if flag.code not in SETTLEMENT_FLAGS]
+        reasons = [
+            f.code for f in claim.flags if f.code not in SETTLEMENT_FLAGS and f.severity != "note"
+        ]
         if upload.id not in {item.id for item in list_uploads(session, case_id)}:
             save_upload(session, upload)
         result = extract_document(
@@ -247,14 +300,17 @@ class ClaimAgent:
                     {"field": field.name, "before": before.get(field.name), "after": field.value}
                 )
                 fields[field.name] = field
+        changed = {change["field"] for change in changes}
         practitioner = fields.get("practitioner_id")
         found = self._hie.lookup_practitioner(practitioner.value).found if practitioner else None
-        facility = fields.get("facility_id")
-        level = self._hie.lookup_facility(facility.value).level if facility else None
-        flags = check(claim, Evidence(fields, result.retake_reasons, found, level), self._clock())
+        flags = check(claim, Evidence(fields, result.retake_reasons, found), self._clock())
         # The corrected page only speaks for the claim form; keep what other evidence raised.
         kept = [f for f in claim.flags if f.code in OTHER_EVIDENCE_FLAGS]
         flags += [f for f in kept if f.code not in {flag.code for flag in flags}]
+        self._audit_read(
+            session, case_id, upload, [f for f in result.fields if f.name in changed], result.model
+        )
+        self._audit_flags(session, case_id, claim.flags, flags)
         claim = claim.model_copy(update={"fields": list(fields.values()), "flags": flags})
         claim = claim.model_copy(update={"readiness": _readiness(claim)})
         save_claim(session, claim)
@@ -287,10 +343,19 @@ class ClaimAgent:
             for field in claim.fields
             if any(citation.source_id == signed for citation in field.citations)
         ]
-        blocking = [flag.code for flag in claim.flags if flag.code not in SETTLEMENT_FLAGS]
+        blocking = [
+            f.code for f in claim.flags if f.code not in SETTLEMENT_FLAGS and f.severity != "note"
+        ]
         if not corrections or blocking:
             raise RescueError(f"{case_id} has no drafted fix or is still blocked: {blocking}")
+        self._audit_confirmed(session, claim, confirmation)
         response = self._hie.edit_claim(claim.hie_id, ClaimPatch(corrections=corrections))
+        self._audit(
+            session,
+            case_id,
+            "resubmitted",
+            {"hie_id": claim.hie_id, "outcome": response.outcome.value},
+        )
         claim = claim.model_copy(
             update={
                 "lifecycle": response.lifecycle,
@@ -318,7 +383,14 @@ class ClaimAgent:
         claim = load_claim(session, case_id)
         if claim.readiness is not Readiness.GREEN or claim.lifecycle is not Lifecycle.DRAFT:
             raise RescueError(f"{case_id} is not a green draft")
+        self._audit_confirmed(session, claim, confirmation)
         response = self._hie.submit_claim(claim, confirmation)
+        self._audit(
+            session,
+            case_id,
+            "submitted",
+            {"hie_id": response.id, "outcome": response.outcome.value},
+        )
         claim = claim.model_copy(update={"lifecycle": response.lifecycle, "hie_id": response.id})
         if response.lifecycle in (Lifecycle.RETURNED, Lifecycle.REJECTED):
             claim = claim.model_copy(update={"returned_at": response.outcome_at})
@@ -331,6 +403,59 @@ class ClaimAgent:
             f"{response.outcome.value}",
             None,
             [],
+        )
+
+    def _audit(self, session, claim_id: str, action: str, detail: dict, actor="lipwad") -> None:
+        add_audit(
+            session,
+            AuditEvent(
+                claim_id=claim_id, at=self._clock(), actor=actor, action=action, detail=detail
+            ),
+        )
+
+    def _audit_read(self, session, claim_id, upload: Upload, fields: list[Field], model) -> None:
+        """Record the file that was read and every value taken from it, with its evidence."""
+        self._audit(
+            session,
+            claim_id,
+            "file_read",
+            {"file": upload.filename, "upload_id": upload.id, "model": model or None},
+        )
+        for field in fields:
+            self._audit(
+                session,
+                claim_id,
+                "value_extracted",
+                {
+                    "field": field.name,
+                    "value": field.value,
+                    "confidence": field.confidence,
+                    "model": model or None,
+                    "citations": [c.model_dump(mode="json") for c in field.citations],
+                },
+            )
+
+    def _audit_flags(self, session, claim_id, before: list[Flag], after: list[Flag]) -> None:
+        """Record each flag that appeared or went away, with the rules it cites."""
+        old, new = {f.code: f for f in before}, {f.code: f for f in after}
+        for code, flag in new.items():
+            if code not in old:
+                self._audit(session, claim_id, "flag_raised", _flag_detail(flag))
+        for code, flag in old.items():
+            if code not in new:
+                self._audit(session, claim_id, "flag_cleared", _flag_detail(flag))
+
+    def _audit_confirmed(self, session, claim, confirmation: Confirmation) -> None:
+        self._audit(
+            session,
+            claim.id,
+            "claim_confirmed",
+            {
+                "confirmed_at": confirmation.confirmed_at.isoformat(),
+                "statement": "I have checked every field against its source.",
+                "open_flags": [flag.code for flag in claim.flags],
+            },
+            actor=confirmation.confirmed_by,
         )
 
     def _log(self, session, claim_id, kind, text, model, citations) -> None:
@@ -347,8 +472,23 @@ class ClaimAgent:
         )
 
 
+DOCUMENT_KINDS = {
+    "invoice.png": "invoice",
+    "discharge_summary.png": "discharge_summary",
+    "case_summary.png": "discharge_summary",
+}
+
+
+def _original_name(filename: str) -> str:
+    """A corrected page stands in for the document it corrects."""
+    return filename.replace("_signed.png", ".png")
+
+
 SETTLEMENT_FLAGS = {"resubmission_deadline_near", "claim_rejected"}
-OTHER_EVIDENCE_FLAGS = {"retake_required", "voice_note_unclear"}
+# Flags raised by evidence a corrected claim form does not speak for.
+OTHER_EVIDENCE_FLAGS = {"retake_required", "voice_note_unclear", "voice_needs_review"} | {
+    requirement.code for requirement in BASELINE
+}
 
 
 class RescueError(Exception):
@@ -384,6 +524,15 @@ def _with_corrected_page(uploads: list[Upload], case_id: str) -> list[Upload]:
         else:
             swapped.append(upload)
     return swapped
+
+
+def _flag_detail(flag: Flag) -> dict:
+    return {
+        "code": flag.code,
+        "severity": flag.severity,
+        "rules": [c.source_id for c in flag.citations if c.kind == "rule"],
+        "citations": [c.model_dump(mode="json") for c in flag.citations],
+    }
 
 
 def _count(number: int, noun: str) -> str:

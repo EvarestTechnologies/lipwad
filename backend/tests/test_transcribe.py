@@ -174,3 +174,41 @@ def test_a_note_without_an_arrival_date_gives_no_admission_field() -> None:
     transcriber = Fixed(Segment(t_start=0, t_end=3, text="Born on the 3rd of March 1990."))
 
     assert transcribe_note(NoteInput(upload=NOTE, case_id="F06"), transcriber).fields == []
+
+
+def test_a_kiswahili_segment_is_marked_for_review_and_no_value_is_taken() -> None:
+    transcriber = Fixed(
+        Segment(t_start=0, t_end=6, text="Patient admitted on the 14th of October 2026."),
+        Segment(
+            t_start=6.5,
+            t_end=14,
+            text="Mgonjwa alilazwa wodini tarehe kumi na tano na akapewa dawa.",
+        ),
+    )
+    result = transcribe_note(NoteInput(upload=NOTE, case_id="F06"), transcriber)
+
+    assert [f.value for f in result.fields] == ["2026-10-14"]
+    assert [(c.t_start, c.t_end) for c in result.review] == [(6.5, 14)]
+    assert result.review[0].quote.startswith("Mgonjwa")
+
+
+def test_a_mixed_segment_yields_no_value_even_with_an_english_date() -> None:
+    transcriber = Fixed(
+        Segment(
+            t_start=0,
+            t_end=9,
+            text="He was admitted on the 14th of October 2026, alilazwa na akapewa dawa.",
+        ),
+    )
+    result = transcribe_note(NoteInput(upload=NOTE, case_id="F06"), transcriber)
+
+    assert result.fields == []
+    assert len(result.review) == 1
+
+
+def test_an_english_note_is_not_sent_for_review() -> None:
+    transcriber = Fixed(
+        Segment(t_start=0, t_end=5, text="She came in on the 11th of October 2026 and was seen."),
+    )
+
+    assert transcribe_note(NoteInput(upload=NOTE, case_id="F06"), transcriber).review == []

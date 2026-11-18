@@ -140,3 +140,25 @@ def test_reset_waits_for_claim_work_in_flight(tmp_path: Path) -> None:
 
     services.maybe_reset()
     assert resets == [1]
+
+
+def test_restoring_a_snapshot_taken_before_the_audit_log_still_records_history(
+    tmp_path: Path,
+) -> None:
+    from sqlalchemy import text
+
+    from app.db.repository import list_audit
+
+    now = [datetime.now(UTC)]
+    demo, sessions, agent, hie = build(tmp_path, now)
+    with sessions() as session:
+        session.execute(text("DROP TABLE audit_events"))
+        session.commit()
+    demo.snapshot()
+
+    demo.restore(hie)
+
+    with sessions() as session:
+        agent.run(session, "C01", case_uploads(DATA_DIR, "C01"))
+        session.commit()
+        assert list_audit(session, "C01")

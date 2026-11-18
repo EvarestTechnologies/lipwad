@@ -5,39 +5,42 @@
       "amount": 6000,
       "bbox": [
         60,
-        260,
-        860,
-        285
-      ]
+        435,
+        855,
+        475
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Consultation",
       "amount": 1500,
       "bbox": [
         60,
-        310,
-        860,
-        335
-      ]
+        515,
+        855,
+        555
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Medication",
       "amount": 700,
       "bbox": [
         60,
-        355,
-        815,
-        380
-      ]
+        585,
+        835,
+        625
+      ],
+      "has_tariff_code": false
     }
   ],
   "total": {
     "amount": 8200,
     "bbox": [
       60,
-      415,
+      700,
       870,
-      445
+      740
     ]
   },
   "itemised": true,

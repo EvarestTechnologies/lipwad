@@ -10,8 +10,19 @@ from pydantic import Field as PydanticField
 
 NonBlank = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
-SUBMISSION_WINDOW = timedelta(days=7)
-RESUBMISSION_WINDOW = timedelta(days=14)
+SUBMISSION_WINDOW = timedelta(days=7)  # SHA Part A 13.2.1; LN 49 reg. 58(1)
+RESUBMISSION_WINDOW = timedelta(days=14)  # SHA Part A 13.5.2, for a sent back claim
+REVIEW_WORKING_DAYS = 7  # SHA Part A 13.8.1, for a rejected claim
+
+
+def add_working_days(start: datetime, days: int) -> datetime:
+    """Count forward Monday to Friday. Kenyan public holidays are not yet excluded."""
+    end = start
+    while days:
+        end += timedelta(days=1)
+        if end.weekday() < 5:
+            days -= 1
+    return end
 
 
 class Lifecycle(StrEnum):
@@ -76,7 +87,8 @@ class Field(BaseModel):
 
 class Flag(BaseModel):
     code: str
-    severity: Literal["amber", "red"]
+    # A note is shown and cited but does not stop a claim from going green.
+    severity: Literal["amber", "red", "note"]
     citations: list[Citation] = PydanticField(default_factory=list)
 
 
@@ -109,7 +121,8 @@ class Claim(BaseModel):
     @property
     def can_be_green(self) -> bool:
         has_evidence = bool(self.fields and self.coded_lines)
-        return has_evidence and not self.uncited_field_names and not self.flags
+        blocking = [flag for flag in self.flags if flag.severity != "note"]
+        return has_evidence and not self.uncited_field_names and not blocking
 
     @computed_field
     @property
@@ -121,9 +134,18 @@ class Claim(BaseModel):
     @computed_field
     @property
     def resubmission_deadline(self) -> datetime | None:
-        if self.lifecycle not in (Lifecycle.RETURNED, Lifecycle.REJECTED):
+        """When a sent back claim lapses if it is not corrected and resubmitted."""
+        if self.lifecycle is not Lifecycle.RETURNED or not self.returned_at:
             return None
-        return self.returned_at + RESUBMISSION_WINDOW if self.returned_at else None
+        return self.returned_at + RESUBMISSION_WINDOW
+
+    @computed_field
+    @property
+    def review_deadline(self) -> datetime | None:
+        """The last day to request a review of a rejected claim."""
+        if self.lifecycle is not Lifecycle.REJECTED or not self.returned_at:
+            return None
+        return add_working_days(self.returned_at, REVIEW_WORKING_DAYS)
 
 
 class ActivityStep(BaseModel):
@@ -135,3 +157,22 @@ class ActivityStep(BaseModel):
     text: str
     model: str | None = None
     citations: list[Citation] = PydanticField(default_factory=list)
+
+
+class AuditEvent(BaseModel):
+    """One entry in a claim's append-only history: what was read, found, flagged or confirmed."""
+
+    claim_id: str
+    at: AwareDatetime
+    actor: str  # "lipwad", or the name of the person who confirmed
+    action: Literal[
+        "file_read",
+        "value_extracted",
+        "flag_raised",
+        "flag_cleared",
+        "claim_confirmed",
+        "submitted",
+        "resubmitted",
+        "explanation_superseded",
+    ]
+    detail: dict = PydanticField(default_factory=dict)

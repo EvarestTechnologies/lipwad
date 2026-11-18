@@ -46,9 +46,23 @@ def test_every_citation_points_at_the_upload_region() -> None:
         assert len(citation.region) == 4
 
 
-def test_signature_is_reported_present_or_absent() -> None:
-    assert values(extract("C01", "claim_form"))["clinician_signature"] == "present"
-    assert values(extract("F01", "claim_form"))["clinician_signature"] == "absent"
+def test_form_3_marks_are_reported_present_or_absent() -> None:
+    clean, unsigned = values(extract("C01", "claim_form")), values(extract("F01", "claim_form"))
+
+    assert clean["declaration_signature"] == "present"
+    assert unsigned["declaration_signature"] == "absent"
+    assert clean["facility_stamp"] == "present"
+    assert clean["physician_details"] == "present"
+
+
+def test_a_blurred_form_reports_no_signature_or_stamp() -> None:
+    read = values(extract("F08", "claim_form"))
+
+    assert "declaration_signature" not in read and "facility_stamp" not in read
+
+
+def test_invoice_lines_report_whether_a_tariff_code_is_printed() -> None:
+    assert values(extract("C01", "invoice"))["invoice_tariff_codes"] == "none"
 
 
 def test_non_itemised_invoice_is_detected() -> None:
@@ -115,3 +129,17 @@ def test_invoice_amount_with_separators_is_read() -> None:
     )
 
     assert values(result)["invoice_total"] == "2200"
+
+
+def test_a_box_in_pixels_cites_the_whole_page_instead_of_a_wrong_spot() -> None:
+    from app.tools.intake import WHOLE_PAGE, _region
+
+    whole = [
+        [WHOLE_PAGE[0], WHOLE_PAGE[1]],
+        [WHOLE_PAGE[2], WHOLE_PAGE[1]],
+        [WHOLE_PAGE[2], WHOLE_PAGE[3]],
+        [WHOLE_PAGE[0], WHOLE_PAGE[3]],
+    ]
+
+    assert _region([728, 535, 887, 561]) == whole
+    assert _region([0.1, 0.2, 0.3, 0.4])[0] == [0.1, 0.2]

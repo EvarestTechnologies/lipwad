@@ -1,0 +1,59 @@
+{
+  "lines": [
+    {
+      "description": "Bed days x3",
+      "amount": 9000,
+      "bbox": [
+        62,
+        287,
+        856,
+        309
+      ],
+      "has_tariff_code": false
+    },
+    {
+      "description": "IV antibiotics",
+      "amount": 4500,
+      "bbox": [
+        63,
+        338,
+        855,
+        359
+      ],
+      "has_tariff_code": false
+    },
+    {
+      "description": "Wound dressing",
+      "amount": 1200,
+      "bbox": [
+        63,
+        388,
+        855,
+        411
+      ],
+      "has_tariff_code": false
+    },
+    {
+      "description": "Consultation",
+      "amount": 1500,
+      "bbox": [
+        63,
+        439,
+        855,
+        462
+      ],
+      "has_tariff_code": false
+    }
+  ],
+  "total": {
+    "amount": 16200,
+    "bbox": [
+      62,
+      506,
+      864,
+      534
+    ]
+  },
+  "itemised": true,
+  "unreadable": []
+}

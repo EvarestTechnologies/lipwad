@@ -1,0 +1,127 @@
+{
+  "fields": [
+    {
+      "name": "patient_name",
+      "value": "Wekesa Simiyu",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.221,
+        0.607,
+        0.245
+      ],
+      "quote": "Wekesa Simiyu"
+    },
+    {
+      "name": "patient_ref",
+      "value": "PT-014",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.274,
+        0.505,
+        0.295
+      ],
+      "quote": "PT-014"
+    },
+    {
+      "name": "visit_type",
+      "value": "Inpatient",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.32,
+        0.541,
+        0.343
+      ],
+      "quote": "Inpatient"
+    },
+    {
+      "name": "admission_date",
+      "value": "2026-10-20",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.371,
+        0.562,
+        0.393
+      ],
+      "quote": "2026-10-20"
+    },
+    {
+      "name": "discharge_date",
+      "value": "2026-10-23",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.425,
+        0.562,
+        0.447
+      ],
+      "quote": "2026-10-23"
+    },
+    {
+      "name": "diagnosis",
+      "value": "Cellulitis, admitted for IV antibiotics",
+      "confidence": 0.98,
+      "bbox": [
+        0.42,
+        0.48,
+        0.853,
+        0.504
+      ],
+      "quote": "Cellulitis, admitted for IV antibiotics"
+    },
+    {
+      "name": "practitioner_name",
+      "value": "Dr. Amani Otieno",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.536,
+        0.642,
+        0.56
+      ],
+      "quote": "Dr. Amani Otieno"
+    },
+    {
+      "name": "practitioner_id",
+      "value": "PR-100",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.591,
+        0.507,
+        0.612
+      ],
+      "quote": "PR-100"
+    },
+    {
+      "name": "facility_id",
+      "value": "FAC-L4",
+      "confidence": 0.97,
+      "bbox": [
+        0.24,
+        0.109,
+        0.308,
+        0.127
+      ],
+      "quote": "FAC-L4"
+    }
+  ],
+  "declaration_signed": true,
+  "declaration_bbox": [
+    0.2,
+    0.768,
+    0.568,
+    0.804
+  ],
+  "stamp_present": true,
+  "stamp_bbox": [
+    0.645,
+    0.755,
+    0.884,
+    0.87
+  ],
+  "unreadable": []
+}

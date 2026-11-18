@@ -15,4 +15,4 @@ The approved screens live on the Lipwad Screens design canvas. The `.dc.html` fi
 
 Money and Rescue screens are described in `docs/DESIGN_PROMPT.md` and `docs/PRD.md`. Build them in the same system; Rescue is a state of Today and Claim review, not its own page.
 
-All names, amounts and the facility shown are synthetic. Rule IDs show `v[YYYY-MM]` and clause text is a placeholder until `docs/SOURCES.md` is filled.
+All names, amounts and the facility shown are synthetic. Rule chips show the rule ID and its source version; the clause text comes from `docs/SOURCES.md`.

@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey
+from sqlalchemy import DDL, JSON, DateTime, ForeignKey, event
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -94,3 +94,30 @@ class ActivityRow(Base):
     text: Mapped[str]
     model: Mapped[str | None]
     citations: Mapped[list] = mapped_column(JSON)
+
+
+class AuditRow(Base):
+    """Append-only: the triggers below refuse any change or deletion.
+
+    No foreign key to claims, so a claim's history survives the demo reseeding its record.
+    """
+
+    __tablename__ = "audit_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    claim_id: Mapped[str] = mapped_column(index=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    actor: Mapped[str]
+    action: Mapped[str]
+    detail: Mapped[dict] = mapped_column(JSON)
+
+
+for _change in ("UPDATE", "DELETE"):
+    event.listen(
+        AuditRow.__table__,
+        "after_create",
+        DDL(
+            f"CREATE TRIGGER audit_events_no_{_change.lower()} BEFORE {_change} ON audit_events "
+            "BEGIN SELECT RAISE(ABORT, 'audit_events is append-only'); END"
+        ),
+    )

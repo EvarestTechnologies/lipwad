@@ -1,12 +1,13 @@
 """Converts claims between domain schemas and database rows."""
 
-from datetime import UTC
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.schemas import (
     ActivityStep,
+    AuditEvent,
     Citation,
     Claim,
     Field,
@@ -15,7 +16,7 @@ from app.db.schemas import (
     Readiness,
     Upload,
 )
-from app.db.tables import ActivityRow, CitationRow, ClaimRow, FieldRow, FlagRow, UploadRow
+from app.db.tables import ActivityRow, AuditRow, CitationRow, ClaimRow, FieldRow, FlagRow, UploadRow
 
 
 class StaleClaimError(Exception):
@@ -117,6 +118,66 @@ def list_activity(
             ]
         )
     )
+
+
+def add_audit(session: Session, entry: AuditEvent) -> None:
+    data = entry.model_dump(mode="json")
+    session.add(AuditRow(**{**data, "at": entry.at.astimezone(UTC)}))
+    session.flush()
+
+
+def list_audit(session: Session, claim_id: str) -> list[AuditEvent]:
+    """A claim's history, oldest first."""
+    rows = session.scalars(
+        select(AuditRow).where(AuditRow.claim_id == claim_id).order_by(AuditRow.id)
+    )
+    return [
+        AuditEvent(
+            claim_id=row.claim_id,
+            at=row.at.replace(tzinfo=UTC),
+            actor=row.actor,
+            action=row.action,
+            detail=row.detail,
+        )
+        for row in rows
+    ]
+
+
+def supersede_explanations(
+    session: Session, before: datetime, now: datetime, reason: str, replacement: str
+) -> int:
+    """Hide explanations written before `before`, keeping each one in the audit trail.
+
+    The text goes into an `explanation_superseded` audit entry with its time and model,
+    then the feed shows `replacement` instead. Returns how many were superseded.
+    """
+    rows = session.scalars(
+        select(ActivityRow).where(
+            ActivityRow.kind == "decide",
+            ActivityRow.at < before.astimezone(UTC),
+            ActivityRow.text.contains(" | SW: "),
+        )
+    ).all()
+    for row in rows:
+        add_audit(
+            session,
+            AuditEvent(
+                claim_id=row.claim_id,
+                at=now,
+                actor="lipwad",
+                action="explanation_superseded",
+                detail={
+                    "text": row.text,
+                    "written_at": row.at.replace(tzinfo=UTC).isoformat(),
+                    "model": row.model,
+                    "reason": reason,
+                },
+            ),
+        )
+        row.text = replacement
+        row.model = None
+    session.flush()
+    return len(rows)
 
 
 def list_uploads(session: Session, claim_id: str) -> list[Upload]:

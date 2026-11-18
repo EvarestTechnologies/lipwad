@@ -54,11 +54,13 @@ def test_audio_citation_requires_timestamps() -> None:
 
 def test_rule_citation_requires_version() -> None:
     with pytest.raises(ValidationError):
-        Citation(kind="rule", source_id="SHA-BEN-01")
+        Citation(kind="rule", source_id="SHA-A-13.3.1-SUPPORTING-DOCS")
 
 
 def coded_line() -> Field:
-    rule = Citation(kind="rule", source_id="SHA-BEN-01", rule_version="v[PLACEHOLDER]")
+    rule = Citation(
+        kind="rule", source_id="SHA-A-13.3.1-SUPPORTING-DOCS", rule_version="Part A, 16 Oct 2026"
+    )
     return Field(name="service_code", value="X00", confidence=0.8, citations=[rule])
 
 
@@ -79,7 +81,7 @@ def database():
         {"kind": "audio", "source_id": "u", "t_start": -5.0, "t_end": 1.0},
         {"kind": "audio", "source_id": "u", "t_start": float("nan"), "t_end": 1.0},
         {"kind": "audio", "source_id": "u", "t_start": 1.0, "t_end": float("inf")},
-        {"kind": "rule", "source_id": "SHA-BEN-01", "rule_version": " "},
+        {"kind": "rule", "source_id": "SHA-A-13.3.1-SUPPORTING-DOCS", "rule_version": " "},
     ],
 )
 def test_citation_that_cannot_locate_its_source_is_rejected(kwargs: dict) -> None:
@@ -118,7 +120,7 @@ def test_uncited_coded_line_blocks_green() -> None:
 
 
 def test_open_flag_blocks_green() -> None:
-    flag = Flag(code="signature_missing", severity="amber", citations=[image_citation()])
+    flag = Flag(code="declaration_unsigned", severity="amber", citations=[image_citation()])
     claim = Claim(id="claim-1", fields=[field([image_citation()])], flags=[flag])
 
     assert not claim.can_be_green
@@ -136,12 +138,20 @@ def test_submission_deadline_is_seven_days_after_discharge() -> None:
     assert claim.submission_deadline == date(2026, 10, 19)
 
 
-@pytest.mark.parametrize("lifecycle", [Lifecycle.RETURNED, Lifecycle.REJECTED])
-def test_resubmission_deadline_is_fourteen_days_after_return(lifecycle: Lifecycle) -> None:
+def test_a_sent_back_claim_has_fourteen_days_to_resubmit() -> None:
     returned = datetime(2026, 10, 1, 9, 30, tzinfo=UTC)
-    claim = Claim(id="claim-1", lifecycle=lifecycle, returned_at=returned)
+    claim = Claim(id="claim-1", lifecycle=Lifecycle.RETURNED, returned_at=returned)
 
     assert claim.resubmission_deadline == datetime(2026, 10, 15, 9, 30, tzinfo=UTC)
+    assert claim.review_deadline is None
+
+
+def test_a_rejected_claim_has_seven_working_days_to_request_review() -> None:
+    returned = datetime(2026, 10, 1, 9, 30, tzinfo=UTC)  # a Thursday
+    claim = Claim(id="claim-1", lifecycle=Lifecycle.REJECTED, returned_at=returned)
+
+    assert claim.review_deadline == datetime(2026, 10, 12, 9, 30, tzinfo=UTC)
+    assert claim.resubmission_deadline is None
 
 
 @pytest.mark.parametrize("lifecycle", [Lifecycle.SUBMITTED, Lifecycle.PAID])

@@ -1,38 +1,209 @@
 """Rule checks over a claim's cited fields.
 
-Rule IDs are placeholders until docs/SOURCES.md registers the SHA documents they come
-from; each finding cites both the evidence and the placeholder rule version.
+Every finding cites its evidence and a rule from RULES. Each rule records the document
+it comes from, that document's status and the exact words of the clause, as registered
+in docs/SOURCES.md. Rules marked "lipwad" are Lipwad's own evidence checks, never SHA
+rules.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import Literal
 
+from app.agent.documents import Requirement, missing, required_documents
 from app.db.schemas import Citation, Claim, Field, Flag, Lifecycle
 
-RULE_VERSION = "v[PLACEHOLDER]"
 DEADLINE_WARNING = timedelta(hours=48)
-MIN_INPATIENT_LEVEL = 3
 
-# What Lipwad's check for each placeholder rule ID looks at. These describe Lipwad's
-# behaviour, not SHA rule text: the source documents are not yet registered in
-# docs/SOURCES.md, so the rule wording itself stays a placeholder.
-RULES = {
-    "SHA-DOC-SIGNATURE": "Flags a claim form read as having no clinician signature.",
-    "SHA-DOC-INVOICE": "Flags an invoice read as showing a total without separate priced lines.",
-    "SHA-SERVICE-TYPE": "Flags bed days billed on a visit recorded as outpatient or same-day.",
-    "SHA-PRACTITIONER-REGISTRY": "Flags a practitioner number the registry lookup does not find.",
-    "SHA-FACILITY-LEVEL": f"Flags inpatient care at a facility below level {MIN_INPATIENT_LEVEL}.",
-    "SHA-RESUBMISSION": "Flags a returned or rejected claim and its resubmission countdown.",
-    "SHA-DATES-CONSISTENT": "Flags a voice note admission date that differs from the form.",
-    "TERM-PLACEHOLDER": "Marks a service code as a placeholder until terminology is registered.",
+PART_A = "https://www.sha.go.ke/wp-content/uploads/2026/10/PART-A-Master-General-Terms-and-Conditions_1.pdf"
+PART_B2 = "https://www.sha.go.ke/wp-content/uploads/2026/10/PART-B2-Social-Health-Insurance-Fund-Contract-1.pdf"
+LN_49 = "https://new.kenyalaw.org/akn/ke/act/ln/2024/49/eng@2025-02-28"
+
+
+@dataclass(frozen=True)
+class Source:
+    """A rule and the registered document it comes from."""
+
+    title: str
+    issuer: str
+    version: str
+    status: Literal["final", "news", "lipwad"]
+    url: str
+    clause: str
+    quote: str
+    checks: str
+    # "verbatim" text is copied word for word; a "summary" is shown without quotation marks.
+    quote_kind: Literal["verbatim", "summary"] = "verbatim"
+
+
+_PART_A = dict(
+    title="Contract for the Provision of Healthcare Services, Part A, Master General Terms and "
+    "Conditions",
+    issuer="Social Health Authority",
+    version="Part A, 16 Oct 2026",
+    status="final",
+    url=PART_A,
+)
+_LN_49 = dict(
+    title="The Social Health Insurance Regulations, 2024 (Legal Notice 49 of 2024)",
+    issuer="Cabinet Secretary for Health",
+    version="LN 49 of 2024",
+    status="final",
+    url=LN_49,
+)
+
+RULES: dict[str, Source] = {
+    "SHA-A-13.2.1-SUBMIT-7D": Source(
+        **_PART_A,
+        clause="13.2.1, p. 52",
+        quote="The Healthcare Provider shall submit all its Claims electronically to the "
+        "Authority or its appointed agent within seven (7) days of the date of Service or of "
+        "the date of discharge of the Beneficiary, whichever is later.",
+        checks="Shows the submission deadline, seven days after discharge.",
+    ),
+    "SHA-A-13.1.2-ACCURATE": Source(
+        **_PART_A,
+        clause="13.1.2, p. 52",
+        quote="The Healthcare Provider certifies that all data submitted in relation to a "
+        "Beneficiary shall at all times be accurate, complete and truthful.",
+        checks="Flags documents that disagree: bed days billed on an outpatient or same-day "
+        "visit, or a voice note admission date that differs from the claim form.",
+    ),
+    "SHA-A-13.3.1-SUPPORTING-DOCS": Source(
+        **_PART_A,
+        clause="13.3.1, p. 53",
+        quote="Each Claim shall be supported by the documentation prescribed by the Authority "
+        "for the relevant Fund and service line, including the beneficiary verification "
+        "reference, the pre-authorisation reference where applicable, the discharge summary, "
+        "the Care Plan, the medical report, the itemised invoice coded to the Tariff, the "
+        "treatment sheet and medication chart, investigation requests and results, operation "
+        "notes where a procedure was performed, and referral documents where applicable.",
+        checks="Flags a missing required document, or an invoice that shows a total without "
+        "separate priced lines. Notes invoice lines with no tariff code, without suggesting "
+        "one.",
+    ),
+    "SHA-A-13.4.3-LICENSED": Source(
+        **_PART_A,
+        clause="13.4.3, pp. 53-54",
+        quote="The Healthcare Provider shall not submit a Claim which involves ... a Service "
+        "delivered by a person not licensed or authorised to deliver it",
+        checks="Flags a practitioner number the registry lookup does not find.",
+    ),
+    "SHA-A-13.5.2-RESUBMIT-14D": Source(
+        **_PART_A,
+        clause="13.5.2, p. 54",
+        quote="The Healthcare Provider shall correct and resubmit a Sent Back Claim within "
+        "fourteen (14) days of the date on which it was returned. A Sent Back Claim which is "
+        "not resubmitted within that period shall lapse and shall not be payable.",
+        checks="Counts down the 14 days to resubmit a sent back claim.",
+    ),
+    "SHA-A-13.8.1-REVIEW-7WD": Source(
+        **_PART_A,
+        clause="13.8.1, p. 55",
+        quote="A Healthcare Provider aggrieved by the rejection or reduction of a Claim may, "
+        "with new evidence, request a review by the Authority within seven (7) Working Days "
+        "of notification.",
+        checks="Flags a rejected claim and its seven working day review window.",
+    ),
+    "SHA-B2-SHIF-DOCS": Source(
+        title="Contract for the Provision of Healthcare Services, Part B2, Social Health "
+        "Insurance Fund Contract",
+        issuer="Social Health Authority",
+        version="Part B2, 16 Oct 2026",
+        status="final",
+        url=PART_B2,
+        clause="8.1.2, p. 11",
+        quote="... the itemised invoice coded to the Tariff, and the discharge summary signed "
+        "by the treating Healthcare Professional.",
+        checks="Flags an SHIF inpatient discharge summary with no clinician signature.",
+    ),
+    "SHI-REG-58-LODGE-7D": Source(
+        **_LN_49,
+        clause="reg. 58(1)",
+        quote="A healthcare provider or health facility shall, within seven days from the date "
+        "of discharge of the patient, lodge a claim to the Claims Management Office or a "
+        "medical insurance provider and claim settling agent, where applicable, for review and "
+        "processing of the claim.",
+        checks="Shows the submission deadline, seven days after discharge.",
+    ),
+    "SHI-REG-58-FORM3": Source(
+        **_LN_49,
+        clause="reg. 58(4)",
+        quote="The claim under subregulation (1) shall be made in Form 3 set out in the First "
+        "Schedule to these Regulations",
+        checks="Flags a claim with no claim form on file.",
+    ),
+    "SHI-FORM3-FIELDS": Source(
+        **_LN_49,
+        clause="First Schedule, Form 3",
+        quote="All fields in this form are mandatory. Incomplete forms will not be processed.",
+        checks="Flags a claim form missing the rendering physician's name and registration "
+        "number, the hospital declaration signature, or the facility stamp.",
+    ),
+    "SHI-SCHED-INPATIENT-LEVEL": Source(
+        **_LN_49,
+        clause="Second and Third Schedules",
+        quote="The Primary Healthcare Fund gives inpatient care at Level 2-4, and the Social "
+        "Health Insurance Fund at Level 4 - 6.",
+        quote_kind="summary",
+        checks="Registered for the fund and facility-level checks planned in Phase 2. Nothing "
+        "is flagged against it yet.",
+    ),
+    "DHA-HIE-REQUIRED-DOCS": Source(
+        title="Understanding Virtual Claims",
+        issuer="Digital Health Agency, HIE documentation",
+        version="last modified 28 Sep 2026",
+        status="final",
+        url="https://hie-docs.dha.go.ke/docs/claims/guides/understandingClaims",
+        clause="Provider Claim field reference, note",
+        quote="If any required document is missing, the claim submission will be blocked.",
+        checks="Context for the required-documents check: the HIE blocks incomplete claims.",
+    ),
+    "SHA-NEWS-3-DOCS": Source(
+        title="SHA halts Ksh3B claims and issues 14-day ultimatum",
+        issuer="People Daily (Kenneth Mwenda)",
+        version="15 Sep 2025",
+        status="news",
+        url="https://peopledaily.digital/news/sha-halts-ksh3b-claims-and-issues-14-day-ultimatum",
+        clause="news report",
+        quote="According to SHA, every claim must include three mandatory documents: a duly "
+        "filled claim form, an itemised invoice, and a discharge or case summary.",
+        checks="Context only for the required-documents check. Never cited alone.",
+    ),
+    "LIPWAD-EVIDENCE-QUALITY": Source(
+        title="Lipwad evidence check",
+        issuer="Lipwad",
+        version="Lipwad check",
+        status="lipwad",
+        url="",
+        clause="",
+        quote="Lipwad does not read a value it cannot see or hear clearly. It asks a person "
+        "to retake the photo, record the note again, or review it. This is Lipwad's own "
+        "check, not an SHA rule.",
+        checks="Flags an unreadable photo or a voice note that could not be heard or needs "
+        "human review.",
+    ),
+    "LIPWAD-CODING-PENDING": Source(
+        title="Lipwad coding status",
+        issuer="Lipwad",
+        version="Lipwad check",
+        status="lipwad",
+        url="",
+        clause="",
+        quote="Lipwad does not check service or diagnosis codes yet. It never assigns or "
+        "suggests codes.",
+        checks="Shows the service as not coded. This is Lipwad's own note, not an SHA rule.",
+    ),
 }
 
 
 def rule(rule_id: str) -> Citation:
     if rule_id not in RULES:
         raise KeyError(f"{rule_id} is not in the rules catalogue")
-    return Citation(kind="rule", source_id=rule_id, rule_version=RULE_VERSION)
+    source = RULES[rule_id]
+    quote = source.quote if source.quote_kind == "verbatim" else None  # never quote a summary
+    return Citation(kind="rule", source_id=rule_id, rule_version=source.version, quote=quote)
 
 
 @dataclass
@@ -40,8 +211,11 @@ class Evidence:
     fields: dict[str, Field]
     retake_reasons: list[str]
     practitioner_found: bool | None
-    facility_level: int | None
     voice_retake: Citation | None = None
+    voice_review: list[Citation] = field(default_factory=list)
+    # HIE document types on file; None means the documents were not listed for this check.
+    documents_present: set[str] | None = None
+    requirements: list[Requirement] | None = None
 
 
 def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
@@ -53,17 +227,73 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
     if evidence.retake_reasons:
         page = Citation(kind="image", source_id=claim.id + "-claim_form", region=[[0, 0], [1, 1]])
         retake = cite("patient_ref", "admission_date") or [page]
-        flags.append(Flag(code="retake_required", severity="amber", citations=retake))
-    if evidence.voice_retake:
-        flags.append(
-            Flag(code="voice_note_unclear", severity="amber", citations=[evidence.voice_retake])
-        )
-    if fields.get("clinician_signature") and fields["clinician_signature"].value == "absent":
         flags.append(
             Flag(
-                code="signature_missing",
+                code="retake_required",
                 severity="amber",
-                citations=[*cite("clinician_signature"), rule("SHA-DOC-SIGNATURE")],
+                citations=[*retake, rule("LIPWAD-EVIDENCE-QUALITY")],
+            )
+        )
+    if evidence.voice_retake:
+        flags.append(
+            Flag(
+                code="voice_note_unclear",
+                severity="amber",
+                citations=[evidence.voice_retake, rule("LIPWAD-EVIDENCE-QUALITY")],
+            )
+        )
+    if evidence.documents_present is not None:
+        needed = evidence.requirements or required_documents()
+        for gap in missing(evidence.documents_present, needed):
+            flags.append(
+                Flag(
+                    code=gap.code,
+                    severity="amber",
+                    citations=[rule(gap.rule_id), rule("SHA-NEWS-3-DOCS")],
+                )
+            )
+    signature = fields.get("discharge_summary_signature")
+    visit = fields.get("visit_type")
+    inpatient = bool(visit and re.search(r"\bin-?patient\b", visit.value, re.I))
+    if inpatient and signature and signature.value == "absent":
+        # Part B2 is the SHIF contract; Lipwad treats inpatient claims as SHIF until the
+        # fund is read from the claim (Phase 2).
+        flags.append(
+            Flag(
+                code="discharge_summary_unsigned",
+                severity="amber",
+                citations=[*cite("discharge_summary_signature"), rule("SHA-B2-SHIF-DOCS")],
+            )
+        )
+    if evidence.voice_review:
+        flags.append(
+            Flag(
+                code="voice_needs_review",
+                severity="amber",
+                citations=[*evidence.voice_review, rule("LIPWAD-EVIDENCE-QUALITY")],
+            )
+        )
+    for name, code in (
+        ("physician_details", "physician_details_missing"),
+        ("declaration_signature", "declaration_unsigned"),
+        ("facility_stamp", "facility_stamp_missing"),
+    ):
+        if fields.get(name) and fields[name].value == "absent":
+            flags.append(
+                Flag(
+                    code=code,
+                    severity="amber",
+                    citations=[*cite(name), rule("SHI-FORM3-FIELDS")],
+                )
+            )
+    tariff = fields.get("invoice_tariff_codes")
+    if tariff and tariff.value != "all":
+        # A note, not a block: Lipwad does not check codes yet and never suggests one.
+        flags.append(
+            Flag(
+                code="tariff_code_missing",
+                severity="note",
+                citations=[*cite("invoice_tariff_codes"), rule("SHA-A-13.3.1-SUPPORTING-DOCS")],
             )
         )
     if fields.get("invoice_itemised") and fields["invoice_itemised"].value == "no":
@@ -71,7 +301,7 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
             Flag(
                 code="itemised_invoice_missing",
                 severity="amber",
-                citations=[*cite("invoice_itemised"), rule("SHA-DOC-INVOICE")],
+                citations=[*cite("invoice_itemised"), rule("SHA-A-13.3.1-SUPPORTING-DOCS")],
             )
         )
     spoken, written = fields.get("voice_admission_date"), fields.get("admission_date")
@@ -82,7 +312,7 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
                 severity="amber",
                 citations=[
                     *cite("admission_date", "voice_admission_date"),
-                    rule("SHA-DATES-CONSISTENT"),
+                    rule("SHA-A-13.1.2-ACCURATE"),
                 ],
             )
         )
@@ -91,7 +321,6 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
         for name, item in fields.items()
         if name.startswith("invoice_line") and re.search(r"\bbed[ -]?days?\b", item.value, re.I)
     ]
-    visit = fields.get("visit_type")
     same_day = (
         fields.get("admission_date")
         and fields.get("discharge_date")
@@ -103,7 +332,7 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
             Flag(
                 code="service_type_inconsistent",
                 severity="red",
-                citations=[*cite("visit_type", *bed_lines), rule("SHA-SERVICE-TYPE")],
+                citations=[*cite("visit_type", *bed_lines), rule("SHA-A-13.1.2-ACCURATE")],
             )
         )
     if evidence.practitioner_found is False:
@@ -111,25 +340,14 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
             Flag(
                 code="practitioner_not_found",
                 severity="red",
-                citations=[*cite("practitioner_id"), rule("SHA-PRACTITIONER-REGISTRY")],
-            )
-        )
-    inpatient = bool(visit and re.search(r"\bin-?patient\b", visit.value, re.I))
-    if (
-        inpatient
-        and evidence.facility_level is not None
-        and evidence.facility_level < MIN_INPATIENT_LEVEL
-    ):
-        flags.append(
-            Flag(
-                code="service_outside_facility_level",
-                severity="red",
-                citations=[*cite("visit_type", "facility_id"), rule("SHA-FACILITY-LEVEL")],
+                citations=[*cite("practitioner_id"), rule("SHA-A-13.4.3-LICENSED")],
             )
         )
     if claim.lifecycle is Lifecycle.REJECTED:
         flags.append(
-            Flag(code="claim_rejected", severity="amber", citations=[rule("SHA-RESUBMISSION")])
+            Flag(
+                code="claim_rejected", severity="amber", citations=[rule("SHA-A-13.8.1-REVIEW-7WD")]
+            )
         )
     deadline = claim.resubmission_deadline
     if deadline and deadline - now <= DEADLINE_WARNING:
@@ -137,7 +355,7 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
             Flag(
                 code="resubmission_deadline_near",
                 severity="amber",
-                citations=[rule("SHA-RESUBMISSION")],
+                citations=[rule("SHA-A-13.5.2-RESUBMIT-14D")],
             )
         )
     return flags

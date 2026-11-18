@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api, headline, ksh, patientName, timeLeft, type Summary, type Today } from "./api";
 import { navigate } from "./router";
-import { NO_ADVICE, plain, REASON_TEXT, StatusPill } from "./ui";
+import { NO_ADVICE, Page, plain, REASON_TEXT, StatusPill } from "./ui";
 
 export function TodayScreen() {
   const [today, setToday] = useState<Today | null>(null);
@@ -39,20 +39,23 @@ export function TodayScreen() {
   const date = new Date().toLocaleDateString("en-KE", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 
   return (
-    <div className="today">
-      <p className="eyebrow">{date}</p>
-      <h1>Habari. Here is what needs you today.</h1>
-
-      <section className="hero" aria-label="Money at risk">
-        <span>At risk if not fixed today</span>
-        <strong className="money">{ksh(today?.at_risk_ksh ?? 0)}</strong>
-        <span>{today?.tasks.length ?? 0} claims need a person · {ready.length} ready for your OK</span>
-      </section>
-
-      {error && <p className="error" role="alert">{error}</p>}
+    <Page
+      crumbs={<span className="eyebrow">{date}</span>}
+      title="Habari. Here is what needs you today."
+      top={
+        <>
+          <section className="hero" aria-label="Money at risk">
+            <span>At risk if not fixed today</span>
+            <strong className="money">{ksh(today?.at_risk_ksh ?? 0)}</strong>
+            <span>{today?.tasks.length ?? 0} claims need a person · {ready.length} ready for your OK</span>
+          </section>
+          {error && <p className="error" role="alert">{error}</p>}
+        </>
+      }
+    >
 
       <section aria-labelledby="needs-you">
-        <h2 id="needs-you">Needs you</h2>
+        <h2 id="needs-you" className="first">Needs you</h2>
         {today?.tasks.length === 0 && <p className="muted">Nothing needs you right now.</p>}
         <ul className="tasks">
           {today?.tasks.map((task) => (
@@ -64,7 +67,7 @@ export function TodayScreen() {
               </div>
               <strong>{patientName(task.patient_name, true)}</strong>
               <p>{REASON_TEXT[task.reasons[0]] ?? task.reasons[0]}</p>
-              {task.deadline && <p className="deadline">{timeLeft(task.deadline)}</p>}
+              {task.deadline && <p className="deadline">{timeLeft(task.deadline, task.lifecycle)}</p>}
               <button onClick={() => navigate(`/claims/${task.id}`)}>{task.rescue ? "Open rescue" : "Fix this claim"}</button>
             </li>
           ))}
@@ -119,6 +122,6 @@ export function TodayScreen() {
         <p className="muted">Open a claim to see every step and the full explanation in English and Kiswahili.</p>
       </section>
       <p className="guardrail">{NO_ADVICE}</p>
-    </div>
+    </Page>
   );
 }

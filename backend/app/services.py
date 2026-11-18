@@ -24,7 +24,7 @@ from app.db.seed import DATA_DIR, load_cases, mock_script, seed_database
 from app.db.tables import ActivityRow, Base, ClaimRow
 from app.hie.factory import create_hie
 from app.hie.mock import MockHIE
-from app.models import Role, create_client
+from app.models import ChatMessage, ChatRequest, Role, create_client
 from app.models.transcribe import create_transcriber
 from app.tools.fixtures import load_fixtures
 
@@ -139,6 +139,7 @@ class DemoState:
                 source.backup(connection.connection.driver_connection)
         finally:
             source.close()
+        Base.metadata.create_all(self.engine)  # a snapshot from an older release may lack tables
         if (self._baseline / "hie_state.json").exists():
             shutil.copyfile(self._baseline / "hie_state.json", self._state)
         taken = datetime.fromisoformat((self._baseline / "taken_at").read_text().strip())
@@ -153,6 +154,40 @@ class DemoState:
         hie.shift(offset)
 
 
+class ReasoningProbe:
+    """Checks the reasoning provider with one tiny call, at most once per `ttl`.
+
+    The deploy health check uses it, so a provider that stops answering shows up as a
+    failed check instead of explanations quietly reading "not available".
+    """
+
+    def __init__(self, client, ttl: timedelta = timedelta(minutes=10), clock=_now) -> None:
+        self._client, self._ttl, self._clock = client, ttl, clock
+        self._result: dict | None = None
+        self._checked: datetime | None = None
+        self._lock = threading.Lock()
+
+    def check(self) -> dict:
+        with self._lock:
+            now = self._clock()
+            if self._result is None or now - self._checked >= self._ttl:
+                self._result, self._checked = self._probe(), now
+            return {**self._result, "checked_at": self._checked.isoformat()}
+
+    def _probe(self) -> dict:
+        request = ChatRequest(
+            case_id="health",
+            json_output=True,
+            messages=[ChatMessage(role="user", content='Return JSON only: {"ok": true}')],
+        )
+        try:
+            response = self._client.complete(request)
+        except Exception as error:  # any provider failure is a failed check
+            log.warning("reasoning health check failed: %s", error)
+            return {"status": "failing", "error": str(error)[:300]}
+        return {"status": "ok", "provider": response.provider, "model": response.model_id}
+
+
 @dataclass
 class Services:
     sessions: sessionmaker[Session]
@@ -163,6 +198,7 @@ class Services:
     demo_reset: DemoReset | None = None
     demo: DemoState | None = None
     admin_key: str | None = None
+    reasoning_probe: ReasoningProbe | None = None
     _locks: dict[str, threading.Lock] = field(default_factory=dict, repr=False)
     _state: threading.Condition = field(default_factory=threading.Condition, repr=False)
     _active: int = 0
@@ -217,9 +253,10 @@ def build_services() -> Services:
         os.environ.get("HIE_MODE", "mock"), script=mock_script(load_cases()), state_path=state
     )
     fixtures = load_fixtures(DATA_DIR)
+    reasoning = create_client(Role.REASONING)
     agent = ClaimAgent(
         create_client(Role.VISION, fixtures=fixtures),
-        create_client(Role.REASONING),
+        reasoning,
         hie,
         create_transcriber(fixtures=fixtures),
     )
@@ -236,4 +273,5 @@ def build_services() -> Services:
         else None,
         demo=demo,
         admin_key=(os.environ.get("LIPWAD_ADMIN_KEY") or "").strip() or None,
+        reasoning_probe=ReasoningProbe(reasoning),
     )

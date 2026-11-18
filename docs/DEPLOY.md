@@ -14,7 +14,7 @@ Modal app "lipwad"
   ├─ web function (FastAPI ASGI) ── /api/* plus the static PWA from frontend/dist
   ├─ Volume "lipwad-data" ── SQLite database and uploads (DATABASE_URL, UPLOAD_DIR point here)
   └─ Secret "lipwad-env" ── provider keys, created from .env, never committed
-Model providers ── Meta Model API, Baseten (Muse Spark Open), Modal (Muse Glimmer)
+Model providers ── Meta Model API (all roles today), Baseten (open-weights Muse Spark, optional, for in-country hosting), Modal (Muse Glimmer)
 ```
 SQLite on a Volume allows one writer, so the web function is capped at one container (`max_containers=1`). That is enough for a demo; Postgres comes later through `DATABASE_URL`.
 
@@ -69,3 +69,7 @@ The provider keys stay in the Modal secret. GitHub only holds the Modal token an
 - Spend limits on Meta, Baseten and Modal billing pages.
 - The web function scales to zero during the build window and is kept warm only from Nov 5.
 - Tests and CI use stub providers. Real-model checks are run by hand with `make eval`.
+
+## Health checks after a deploy
+`make deploy` runs `make smoke` against the live URL. It fails if `/api/health` or the app shell is down, or if `/api/health/reasoning` does not report `"status":"ok"`. The reasoning check makes one small model call at most every 10 minutes and returns 503 with the provider's error when reasoning fails, so a deactivated model no longer hides behind "Explanation not available".
+

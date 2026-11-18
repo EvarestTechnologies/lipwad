@@ -16,9 +16,7 @@
     "discharge_date": "2026-10-12",
     "diagnosis": "Fever and cough, malaria test negative"
   },
-  "codes": [
-    "PLACEHOLDER-001"
-  ],
+  "codes": [],
   "mock_hie_outcome": "accept",
   "mock_hie_reasons": [],
   "days_since_outcome": null,

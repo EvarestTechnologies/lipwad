@@ -17,7 +17,7 @@ from app.tools.fixtures import load_fixtures
 
 DATA_DIR = Path(__file__).parents[2] / "data" / "synthetic"
 CASES = {case.case_id: case for case in load_cases(DATA_DIR)}
-GATE = ["C01", "C02", "C03", "F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09"]
+GATE = sorted(CASES)
 
 
 class FakeReasoning:
@@ -73,7 +73,7 @@ def test_every_flag_and_field_is_cited(case_id: str) -> None:
 
 def test_rule_flags_cite_a_rule_and_its_version() -> None:
     claim, _, _ = run("F01")
-    flag = next(flag for flag in claim.flags if flag.code == "signature_missing")
+    flag = next(flag for flag in claim.flags if flag.code == "declaration_unsigned")
 
     assert any(c.kind == "rule" and c.rule_version for c in flag.citations)
     assert any(c.kind == "image" for c in flag.citations)
@@ -135,7 +135,7 @@ def test_rescue_only_replaces_fields_that_changed() -> None:
         for field in claim.fields
         if any(c.source_id == "F05-claim_form_signed" for c in field.citations)
     ]
-    assert signed == ["clinician_signature"]
+    assert signed == ["declaration_signature"]
 
 
 def test_activity_names_the_model_that_did_the_work() -> None:
@@ -235,3 +235,64 @@ def test_a_corrected_page_keeps_flags_about_other_evidence() -> None:
 
     assert "voice_note_unclear" in {flag.code for flag in claim.flags}
     assert claim.readiness != Readiness.GREEN
+
+
+def test_f10_names_the_missing_discharge_summary_and_cites_part_a() -> None:
+    claim, _, _ = run("F10")
+    flag = next(f for f in claim.flags if f.code == "discharge_summary_missing")
+
+    assert claim.readiness == Readiness.AMBER
+    assert {c.source_id for c in flag.citations} == {
+        "SHA-A-13.3.1-SUPPORTING-DOCS",
+        "SHA-NEWS-3-DOCS",
+    }
+
+
+def test_the_clean_inpatient_claim_reads_a_signed_discharge_summary() -> None:
+    claim, _, _ = run("C04")
+    signature = next(f for f in claim.fields if f.name == "discharge_summary_signature")
+
+    assert claim.readiness == Readiness.GREEN
+    assert signature.value == "present"
+    assert signature.citations[0].source_id == "C04-discharge_summary"
+
+
+def test_the_clean_claim_has_tariff_codes_and_no_note() -> None:
+    claim, _, _ = run("C04")
+    codes = next(f for f in claim.fields if f.name == "invoice_tariff_codes")
+
+    assert codes.value == "all"
+    assert claim.flags == []
+
+
+def test_f10_still_notes_its_missing_tariff_codes() -> None:
+    claim, _, _ = run("F10")
+
+    assert "tariff_code_missing" in {f.code for f in claim.flags}
+
+
+def explain_payload(case_id: str) -> dict:
+    _, _, reasoning = run(case_id)
+    return json.loads(reasoning.requests[-1].messages[-1].content)
+
+
+def test_the_explanation_model_sees_only_the_status_and_lipwads_own_steps() -> None:
+    from app.agent.steps import FIX_STEPS
+
+    payload = explain_payload("F10")
+
+    assert set(payload) == {"status", "steps"}
+    assert payload["steps"] == [FIX_STEPS["discharge_summary_missing"]]
+
+
+def test_notes_never_become_steps_and_a_clean_claim_has_none() -> None:
+    assert explain_payload("C01") == {"status": "green", "steps": []}
+
+
+def test_no_step_names_a_value_or_asks_to_change_a_charge_or_code() -> None:
+    import re
+
+    from app.agent.steps import FIX_STEPS
+
+    for step in FIX_STEPS.values():
+        assert not re.search(r"\d{4}-\d{2}|KSh|\bremove\b|\btariff code", step, re.I), step

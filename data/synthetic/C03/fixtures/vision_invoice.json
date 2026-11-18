@@ -4,40 +4,43 @@
       "description": "Delivery package",
       "amount": 10000,
       "bbox": [
-        61,
-        452,
-        915,
-        479
-      ]
+        60,
+        270,
+        890,
+        295
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Bed day x1",
       "amount": 3000,
       "bbox": [
-        62,
-        528,
-        908,
-        557
-      ]
+        60,
+        320,
+        890,
+        345
+      ],
+      "has_tariff_code": false
     },
     {
       "description": "Medication",
       "amount": 1200,
       "bbox": [
-        62,
-        604,
-        906,
-        632
-      ]
+        60,
+        370,
+        890,
+        395
+      ],
+      "has_tariff_code": false
     }
   ],
   "total": {
     "amount": 14200,
     "bbox": [
-      62,
-      718,
-      913,
-      751
+      60,
+      440,
+      890,
+      470
     ]
   },
   "itemised": true,

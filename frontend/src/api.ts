@@ -8,7 +8,7 @@ export type Citation = {
   quote: string | null;
 };
 export type Field = { name: string; value: string; confidence: number; citations: Citation[] };
-export type Flag = { code: string; severity: "amber" | "red"; citations: Citation[] };
+export type Flag = { code: string; severity: "amber" | "red" | "note"; citations: Citation[] };
 export type Claim = {
   id: string;
   lifecycle: string;
@@ -18,6 +18,7 @@ export type Claim = {
   coded_lines: Field[];
   flags: Flag[];
   resubmission_deadline: string | null;
+  review_deadline: string | null;
   submission_deadline: string | null;
 };
 export type Step = { claim_id: string; at: string; kind: string; text: string; model: string | null };
@@ -36,7 +37,20 @@ export type Summary = {
   rescue: boolean;
 };
 export type Today = { at_risk_ksh: number; tasks: Summary[]; activity: Step[] };
-export type Rule = { id: string; checks: string; version: string; source_registered: boolean };
+export type Rule = {
+  id: string;
+  title: string;
+  issuer: string;
+  version: string;
+  status: "final" | "news" | "lipwad";
+  url: string;
+  clause: string;
+  quote: string;
+  checks: string;
+  quote_kind: "verbatim" | "summary";
+};
+export type AuditEvent = { at: string; actor: string; action: string; detail: Record<string, unknown> };
+export type Audit = { claim_id: string; exported_at: string; events: AuditEvent[] };
 export type Draft = { reason: string[]; changes: { field: string; before: string | null; after: string }[] };
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -58,6 +72,7 @@ export const api = {
   today: () => call<Today>("/today"),
   claims: () => call<Summary[]>("/claims"),
   rules: () => call<Rule[]>("/rules"),
+  audit: (id: string) => call<Audit>(`/claims/${id}/audit`),
   claim: (id: string) => call<ClaimDetail>(`/claims/${id}`),
   run: (id: string) => post<ClaimDetail>(`/claims/${id}/run`),
   submit: (id: string, confirmedBy: string) =>
@@ -70,12 +85,14 @@ export const api = {
 export const ksh = (amount: number | null) =>
   amount === null ? "—" : `KSh ${amount.toLocaleString("en-KE")}`;
 
-export function timeLeft(deadline: string | null): string | null {
+/** A sent back claim has 14 days to resubmit; a rejected one has 7 working days to ask for review. */
+export function timeLeft(deadline: string | null, lifecycle: string): string | null {
   if (!deadline) return null;
+  const review = lifecycle === "rejected";
   const hours = Math.round((new Date(deadline).getTime() - Date.now()) / 3_600_000);
-  if (hours <= 0) return "Window closed";
-  if (hours < 48) return `${hours} hours left to resubmit`;
-  return `${Math.floor(hours / 24)} days left to resubmit`;
+  if (hours <= 0) return review ? "Review window closed" : "Resubmission window closed";
+  if (review) return hours < 48 ? `${hours} hours left to request a review` : `${Math.ceil(hours / 24)} days left to request a review`;
+  return hours < 48 ? `${hours} hours left of 14 days to resubmit` : `${Math.ceil(hours / 24)} of 14 days left to resubmit`;
 }
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -83,7 +100,10 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 export function display(name: string, value: string): string {
   const v = value.replace(" [demo]", "");
   if (name === "invoice_total" && /^\d+$/.test(v)) return ksh(Number(v));
-  if (name === "clinician_signature") return v === "present" ? "Signed" : "Not signed";
+  if (name === "declaration_signature" || name === "discharge_summary_signature") return v === "present" ? "Signed" : "Not signed";
+  if (name === "facility_stamp") return v === "present" ? "Stamped" : "No stamp";
+  if (name === "physician_details") return v === "present" ? "Name and registration no. given" : "Missing";
+  if (name === "invoice_tariff_codes") return { all: "On every line", some: "On some lines", none: "None printed" }[v] ?? v;
   if (name === "invoice_itemised") return v === "yes" ? "Yes" : "No, total only";
   if (DATE.test(v)) {
     return new Date(`${v}T00:00:00`).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
