@@ -51,18 +51,25 @@ DOCUMENT_PROMPTS = {
         '"unreadable":[str]}. Amounts in Kenyan shillings without separators. '
         "Never guess: list anything unclear in unreadable."
     ),
+    "discharge_summary": (
+        "You look at a photographed hospital discharge summary. Report only whether the "
+        "treating clinician has signed it; do not read, interpret or add anything else. "
+        'Return JSON only: {"signature_present":bool,"signature_bbox":[x0,y0,x1,y1] '
+        'normalised 0-1 around the clinician signature line,"unreadable":[str]}. '
+        "Never guess: if the page is too unclear to tell, list it in unreadable."
+    ),
 }
 
 
 class DocumentInput(BaseModel):
     upload: Upload
     case_id: str
-    kind: Literal["claim_form", "invoice"]
+    kind: Literal["claim_form", "invoice", "discharge_summary"]
 
 
 class ExtractionResult(BaseModel):
     upload_id: str
-    kind: Literal["claim_form", "invoice"]
+    kind: Literal["claim_form", "invoice", "discharge_summary"]
     fields: list[Field]
     retake_reasons: list[str]
     model: str
@@ -87,11 +94,11 @@ def extract_document(document: DocumentInput, client: ModelClient) -> Extraction
     response = client.complete(request)
     try:
         data = _parse(response.content)
-        result = (
-            _claim_form(document, data)
-            if document.kind == "claim_form"
-            else _invoice(document, data)
-        )
+        result = {
+            "claim_form": _claim_form,
+            "invoice": _invoice,
+            "discharge_summary": _discharge_summary,
+        }[document.kind](document, data)
     except (ValueError, TypeError, AttributeError):
         result = ExtractionResult(
             upload_id=document.upload.id,
@@ -180,6 +187,30 @@ def _invoice(document: DocumentInput, data: dict[str, Any]) -> ExtractionResult:
     )
 
 
+def _discharge_summary(document: DocumentInput, data: dict[str, Any]) -> ExtractionResult:
+    retake = [f"discharge summary {item} is unreadable" for item in data.get("unreadable", [])]
+    fields = []
+    if not retake:
+        signed = bool(data.get("signature_present"))
+        fields.append(
+            _field(
+                "discharge_summary_signature",
+                "present" if signed else "absent",
+                1.0,
+                document.upload.id,
+                data.get("signature_bbox"),
+                None,
+            )
+        )
+    return ExtractionResult(
+        upload_id=document.upload.id,
+        kind="discharge_summary",
+        fields=fields,
+        retake_reasons=retake,
+        model="",
+    )
+
+
 def _amount(value: Any) -> int:
     return int(str(value).replace(",", "").replace("KSh", "").strip())
 
@@ -197,7 +228,9 @@ def _field(
 
 
 def _region(bbox: list[float] | None) -> list[list[float]]:
-    if not bbox or len(bbox) != 4:
+    if not bbox or len(bbox) != 4 or any(float(value) > 1 for value in bbox):
+        # A missing box, or one in pixels rather than 0-1, cites the whole page instead of
+        # pointing at the wrong spot.
         bbox = WHOLE_PAGE
     x0, y0, x1, y1 = (min(max(float(value), 0.0), 1.0) for value in bbox)
     return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]

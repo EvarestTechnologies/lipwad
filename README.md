@@ -36,16 +36,17 @@ Running the agent live on real models, every demo case reaches its expected stat
 
 | Case | Scenario | Result |
 |---|---|---|
-| C01–C03 | Clean outpatient, inpatient and maternity claims | Green |
+| C01–C04 | Clean outpatient, inpatient and maternity claims | Green |
 | F01 | Claim form unsigned | Amber · signature missing |
 | F02 | Invoice not itemised | Amber · itemised invoice missing |
 | F03 | Outpatient visit billed with inpatient bed days | Red · service type inconsistent |
 | F04 | Practitioner not in registry | Red · practitioner not found |
-| F05 | Returned claim on day 13 of 14 | Amber · deadline near; rescue resubmits the signed page |
+| F05 | Sent back claim on day 13 of 14 | Amber · deadline near; rescue resubmits the signed page |
 | F06 | Voice note gives a different admission date from the form | Amber · admission date mismatch, both sources cited |
 | F07 | Inpatient care at a level 2 facility | Green · covered by the Primary Healthcare Fund (LN 49); the old level check was retired |
 | F08 | Blurred photo | Amber · retake requested, nothing guessed |
-| F09 | Rejected claim | Amber · claim rejected |
+| F09 | Rejected claim | Amber · 7 working days to request a review |
+| F10 | Inpatient claim with no discharge summary | Amber · names the missing document |
 
 A claim takes 22–37 seconds from photos to a cited status. The same cases run in CI through recorded model responses, so tests never call a paid model.
 

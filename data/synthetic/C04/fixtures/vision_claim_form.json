@@ -1,0 +1,120 @@
+{
+  "fields": [
+    {
+      "name": "patient_name",
+      "value": "Amina Chepkoech",
+      "confidence": 0.99,
+      "bbox": [
+        0.418,
+        0.226,
+        0.65,
+        0.249
+      ],
+      "quote": "Amina Chepkoech"
+    },
+    {
+      "name": "patient_ref",
+      "value": "PT-004",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.28,
+        0.508,
+        0.301
+      ],
+      "quote": "PT-004"
+    },
+    {
+      "name": "visit_type",
+      "value": "Inpatient",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.33,
+        0.528,
+        0.356
+      ],
+      "quote": "Inpatient"
+    },
+    {
+      "name": "admission_date",
+      "value": "2026-10-18",
+      "confidence": 0.99,
+      "bbox": [
+        0.419,
+        0.379,
+        0.564,
+        0.401
+      ],
+      "quote": "2026-10-18"
+    },
+    {
+      "name": "discharge_date",
+      "value": "2026-10-20",
+      "confidence": 0.99,
+      "bbox": [
+        0.419,
+        0.426,
+        0.565,
+        0.447
+      ],
+      "quote": "2026-10-20"
+    },
+    {
+      "name": "diagnosis",
+      "value": "Gastroenteritis, admitted for IV fluids",
+      "confidence": 0.98,
+      "bbox": [
+        0.419,
+        0.482,
+        0.87,
+        0.51
+      ],
+      "quote": "Gastroenteritis, admitted for IV fluids"
+    },
+    {
+      "name": "practitioner_name",
+      "value": "Dr. Amani Otieno",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.539,
+        0.63,
+        0.564
+      ],
+      "quote": "Dr. Amani Otieno"
+    },
+    {
+      "name": "practitioner_id",
+      "value": "PR-100",
+      "confidence": 0.99,
+      "bbox": [
+        0.42,
+        0.587,
+        0.508,
+        0.609
+      ],
+      "quote": "PR-100"
+    },
+    {
+      "name": "facility_id",
+      "value": "FAC-L4",
+      "confidence": 0.98,
+      "bbox": [
+        0.24,
+        0.113,
+        0.328,
+        0.131
+      ],
+      "quote": "FAC-L4"
+    }
+  ],
+  "signature_present": true,
+  "signature_bbox": [
+    0.418,
+    0.766,
+    0.808,
+    0.812
+  ],
+  "unreadable": []
+}

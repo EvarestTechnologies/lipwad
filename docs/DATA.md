@@ -18,17 +18,21 @@ Stored under `data/synthetic/<case_id>/` with `ground_truth.json`.
 | C01 | Clean outpatient visit | Level 3 | Green | — |
 | C02 | Clean inpatient admission, full docs | Level 4 | Green | — |
 | C03 | Clean maternity (normal delivery) | Level 4 | Green | — |
+| C04 | Clean inpatient admission with a signed discharge summary | Level 4 | Green | — |
 | F01 | Discharge summary unsigned | Level 4 | Amber | Missing clinician signature (page/region cited) |
 | F02 | Invoice not itemised | Level 4 | Amber | Itemised invoice required |
 | F03 | Outpatient visit billed as inpatient | Level 3 | Red | Service type inconsistent with documents |
 | F04 | Practitioner not found in registry | Level 4 | Red | Practitioner validation failed |
-| F05 | Returned claim, day 13 of 14 | Level 4 | Amber + countdown | Rescue flow, one day left |
+| F05 | Sent back claim, day 13 of 14 | Level 4 | Amber + countdown | Rescue flow, one day left (SHA Part A 13.5.2) |
 | F06 | Dates disagree across documents | Level 3 | Amber | Admission date mismatch (both sources cited) |
 | F07 | Inpatient care at a Level 2 facility | Level 2 | Green | Retired: LN 49 covers inpatient care at Level 2-4 under the Primary Healthcare Fund. Fund checks wait for Phase 2. |
 | F08 | Blurry photo, key field unreadable | Level 3 | Amber | Retake requested, no guessing |
-| F09 | Rejected claim with stated reason | Level 4 | Rescue | Fix drafted with rule cited |
+| F09 | Rejected claim with stated reason | Level 4 | Amber | 7 working days to request a review (SHA Part A 13.8.1) |
+| F10 | Inpatient SHIF claim with no discharge summary | Level 4 | Amber | Names the missing document (SHA Part A 13.3.1) |
 
 Add more as time allows. C01–C03 and F01–F05 are demo-critical.
+
+Every case except F10 also has a discharge summary, or a case summary for an outpatient visit, rendered by `make_documents.py` and read by Muse Spark for its signature only.
 
 ## 3. Ground truth format
 ```json

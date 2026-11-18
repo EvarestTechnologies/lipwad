@@ -1,0 +1,55 @@
+{
+  "lines": [
+    {
+      "description": "Bed days x3",
+      "amount": 9000,
+      "bbox": [
+        727,
+        295,
+        876,
+        321
+      ]
+    },
+    {
+      "description": "IV antibiotics",
+      "amount": 4500,
+      "bbox": [
+        728,
+        345,
+        876,
+        367
+      ]
+    },
+    {
+      "description": "Wound dressing",
+      "amount": 1200,
+      "bbox": [
+        727,
+        395,
+        875,
+        418
+      ]
+    },
+    {
+      "description": "Consultation",
+      "amount": 1500,
+      "bbox": [
+        726,
+        446,
+        875,
+        470
+      ]
+    }
+  ],
+  "total": {
+    "amount": 16200,
+    "bbox": [
+      728,
+      535,
+      887,
+      561
+    ]
+  },
+  "itemised": true,
+  "unreadable": []
+}

@@ -26,7 +26,7 @@ smoke:
 
 review-all:
 	@test -n "$(URL)" || (echo "usage: make review-all URL=https://..." && exit 1)
-	for case in C01 C02 C03 F01 F02 F03 F04 F05 F06 F07 F08 F09; do \
+	for case in C01 C02 C03 C04 F01 F02 F03 F04 F05 F06 F07 F08 F09 F10; do \
 		curl -fsS -X POST "$(URL)/api/claims/$$case/run" -o /dev/null -w "$$case %{http_code} %{time_total}s\n"; \
 	done
 

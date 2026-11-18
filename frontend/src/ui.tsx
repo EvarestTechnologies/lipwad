@@ -35,6 +35,10 @@ export const REASON_TEXT: Record<string, string> = {
   claim_rejected: "SHA rejected this claim. You have 7 working days to request a review with new evidence.",
   voice_note_unclear: "The voice note could not be heard. Record it again somewhere quiet.",
   admission_date_mismatch: "The voice note gives a different admission date from the claim form. Confirm it with the ward.",
+  discharge_summary_missing: "No discharge or case summary is on file. SHA needs one with every claim.",
+  claim_form_missing: "No claim form is on file. SHA needs one with every claim.",
+  invoice_missing: "No itemised invoice or final bill is on file. SHA needs one with every claim.",
+  discharge_summary_unsigned: "The discharge summary is not signed. Ask the treating clinician to sign it.",
 };
 
 export const NO_ADVICE =
@@ -63,6 +67,7 @@ export const LABELS: Record<string, string> = {
   invoice_itemised: "Itemised invoice",
   service_code: "Service code",
   voice_admission_date: "Admitted (voice note)",
+  discharge_summary_signature: "Discharge summary signature",
 };
 
 const SHORT_REASON: Record<string, string> = {
@@ -75,8 +80,16 @@ const SHORT_REASON: Record<string, string> = {
   claim_rejected: "rejected by SHA",
   admission_date_mismatch: "admission dates disagree",
   voice_note_unclear: "voice note could not be heard",
+  discharge_summary_missing: "discharge summary missing",
+  claim_form_missing: "claim form missing",
+  invoice_missing: "invoice missing",
+  discharge_summary_unsigned: "discharge summary unsigned",
 };
-const DOCUMENTS: Record<string, string> = { claim_form_signed: "signed claim form" };
+const DOCUMENTS: Record<string, string> = {
+  claim_form_signed: "signed claim form",
+  discharge_summary: "discharge summary",
+  case_summary: "case summary",
+};
 const STATUS_WORD: Record<string, string> = { green: "Ready", amber: "Needs a fix", red: "Blocked" };
 
 /** Rewrites an activity step's internal codes and field names in plain words. */

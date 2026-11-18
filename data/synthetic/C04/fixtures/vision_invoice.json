@@ -1,0 +1,55 @@
+{
+  "lines": [
+    {
+      "description": "Bed days x2",
+      "amount": 6000,
+      "bbox": [
+        60,
+        214,
+        875,
+        238
+      ]
+    },
+    {
+      "description": "IV fluids",
+      "amount": 2800,
+      "bbox": [
+        60,
+        262,
+        875,
+        285
+      ]
+    },
+    {
+      "description": "Stool microscopy",
+      "amount": 900,
+      "bbox": [
+        60,
+        308,
+        875,
+        333
+      ]
+    },
+    {
+      "description": "Consultation",
+      "amount": 1500,
+      "bbox": [
+        60,
+        357,
+        875,
+        380
+      ]
+    }
+  ],
+  "total": {
+    "amount": 11200,
+    "bbox": [
+      60,
+      426,
+      875,
+      452
+    ]
+  },
+  "itemised": true,
+  "unreadable": []
+}

@@ -1,0 +1,47 @@
+{
+  "case_id": "F10",
+  "facility_level": 4,
+  "facility_id": "FAC-L4",
+  "patient_ref": "PT-010",
+  "practitioner_id": "PR-100",
+  "service_type": "inpatient",
+  "date_of_service": "2026-10-20",
+  "expected_status": "amber",
+  "expected_reasons": [
+    "discharge_summary_missing"
+  ],
+  "fields": {
+    "patient_name": "Wekesa Simiyu [demo]",
+    "admission_date": "2026-10-20",
+    "discharge_date": "2026-10-23",
+    "diagnosis": "Cellulitis, admitted for IV antibiotics"
+  },
+  "codes": [],
+  "mock_hie_outcome": "accept",
+  "mock_hie_reasons": [],
+  "days_since_outcome": null,
+  "practitioner_registered": true,
+  "documents_service_type": "inpatient",
+  "invoice_items": [
+    [
+      "Bed days x3",
+      9000
+    ],
+    [
+      "IV antibiotics",
+      4500
+    ],
+    [
+      "Wound dressing",
+      1200
+    ],
+    [
+      "Consultation",
+      1500
+    ]
+  ],
+  "invoice_itemised": true,
+  "form_signed": true,
+  "has_summary": false,
+  "note": "Inpatient SHIF claim with no discharge summary. Lipwad names the missing document and cites SHA Part A 13.3.1."
+}

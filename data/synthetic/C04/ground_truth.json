@@ -1,0 +1,44 @@
+{
+  "case_id": "C04",
+  "facility_level": 4,
+  "facility_id": "FAC-L4",
+  "patient_ref": "PT-004",
+  "practitioner_id": "PR-100",
+  "service_type": "inpatient",
+  "date_of_service": "2026-10-18",
+  "expected_status": "green",
+  "expected_reasons": [],
+  "fields": {
+    "patient_name": "Amina Chepkoech [demo]",
+    "admission_date": "2026-10-18",
+    "discharge_date": "2026-10-20",
+    "diagnosis": "Gastroenteritis, admitted for IV fluids"
+  },
+  "codes": [],
+  "mock_hie_outcome": "accept",
+  "mock_hie_reasons": [],
+  "days_since_outcome": null,
+  "practitioner_registered": true,
+  "documents_service_type": "inpatient",
+  "invoice_items": [
+    [
+      "Bed days x2",
+      6000
+    ],
+    [
+      "IV fluids",
+      2800
+    ],
+    [
+      "Stool microscopy",
+      900
+    ],
+    [
+      "Consultation",
+      1500
+    ]
+  ],
+  "invoice_itemised": true,
+  "form_signed": true,
+  "note": "Clean inpatient claim with every required document, including a signed discharge summary."
+}

@@ -115,3 +115,17 @@ def test_invoice_amount_with_separators_is_read() -> None:
     )
 
     assert values(result)["invoice_total"] == "2200"
+
+
+def test_a_box_in_pixels_cites_the_whole_page_instead_of_a_wrong_spot() -> None:
+    from app.tools.intake import WHOLE_PAGE, _region
+
+    whole = [
+        [WHOLE_PAGE[0], WHOLE_PAGE[1]],
+        [WHOLE_PAGE[2], WHOLE_PAGE[1]],
+        [WHOLE_PAGE[2], WHOLE_PAGE[3]],
+        [WHOLE_PAGE[0], WHOLE_PAGE[3]],
+    ]
+
+    assert _region([728, 535, 887, 561]) == whole
+    assert _region([0.1, 0.2, 0.3, 0.4])[0] == [0.1, 0.2]

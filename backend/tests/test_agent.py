@@ -17,7 +17,7 @@ from app.tools.fixtures import load_fixtures
 
 DATA_DIR = Path(__file__).parents[2] / "data" / "synthetic"
 CASES = {case.case_id: case for case in load_cases(DATA_DIR)}
-GATE = ["C01", "C02", "C03", "F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09"]
+GATE = sorted(CASES)
 
 
 class FakeReasoning:
@@ -235,3 +235,23 @@ def test_a_corrected_page_keeps_flags_about_other_evidence() -> None:
 
     assert "voice_note_unclear" in {flag.code for flag in claim.flags}
     assert claim.readiness != Readiness.GREEN
+
+
+def test_f10_names_the_missing_discharge_summary_and_cites_part_a() -> None:
+    claim, _, _ = run("F10")
+    flag = next(f for f in claim.flags if f.code == "discharge_summary_missing")
+
+    assert claim.readiness == Readiness.AMBER
+    assert {c.source_id for c in flag.citations} == {
+        "SHA-A-13.3.1-SUPPORTING-DOCS",
+        "SHA-NEWS-3-DOCS",
+    }
+
+
+def test_the_clean_inpatient_claim_reads_a_signed_discharge_summary() -> None:
+    claim, _, _ = run("C04")
+    signature = next(f for f in claim.fields if f.name == "discharge_summary_signature")
+
+    assert claim.readiness == Readiness.GREEN
+    assert signature.value == "present"
+    assert signature.citations[0].source_id == "C04-discharge_summary"

@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Literal
 
+from app.agent.documents import Requirement, missing, required_documents
 from app.db.schemas import Citation, Claim, Field, Flag, Lifecycle
 
 DEADLINE_WARNING = timedelta(hours=48)
@@ -199,6 +200,9 @@ class Evidence:
     retake_reasons: list[str]
     practitioner_found: bool | None
     voice_retake: Citation | None = None
+    # HIE document types on file; None means the documents were not listed for this check.
+    documents_present: set[str] | None = None
+    requirements: list[Requirement] | None = None
 
 
 def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
@@ -223,6 +227,29 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
                 code="voice_note_unclear",
                 severity="amber",
                 citations=[evidence.voice_retake, rule("LIPWAD-EVIDENCE-QUALITY")],
+            )
+        )
+    if evidence.documents_present is not None:
+        needed = evidence.requirements or required_documents()
+        for gap in missing(evidence.documents_present, needed):
+            flags.append(
+                Flag(
+                    code=gap.code,
+                    severity="amber",
+                    citations=[rule("SHA-A-13.3.1-SUPPORTING-DOCS"), rule("SHA-NEWS-3-DOCS")],
+                )
+            )
+    signature = fields.get("discharge_summary_signature")
+    visit = fields.get("visit_type")
+    inpatient = bool(visit and re.search(r"\bin-?patient\b", visit.value, re.I))
+    if inpatient and signature and signature.value == "absent":
+        # Part B2 is the SHIF contract; Lipwad treats inpatient claims as SHIF until the
+        # fund is read from the claim (Phase 2).
+        flags.append(
+            Flag(
+                code="discharge_summary_unsigned",
+                severity="amber",
+                citations=[*cite("discharge_summary_signature"), rule("SHA-B2-SHIF-DOCS")],
             )
         )
     if fields.get("clinician_signature") and fields["clinician_signature"].value == "absent":
@@ -258,7 +285,6 @@ def check(claim: Claim, evidence: Evidence, now: datetime) -> list[Flag]:
         for name, item in fields.items()
         if name.startswith("invoice_line") and re.search(r"\bbed[ -]?days?\b", item.value, re.I)
     ]
-    visit = fields.get("visit_type")
     same_day = (
         fields.get("admission_date")
         and fields.get("discharge_date")

@@ -5,6 +5,7 @@ not copy any official SHA form.
 """
 
 import json
+import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -79,17 +80,61 @@ def invoice(case: dict) -> Image.Image:
     return image
 
 
+def summary(case: dict, signed: bool) -> Image.Image:
+    """A discharge summary, or a case summary for an outpatient visit."""
+    image, draw = page()
+    fields = case["fields"]
+    outpatient = case["documents_service_type"] == "outpatient"
+    draw.text((80, 120), FACILITY_NAMES[case["facility_level"]], fill=INK, font=font(48))
+    draw.text(
+        (80, 230), "CASE SUMMARY" if outpatient else "DISCHARGE SUMMARY", fill=INK, font=font(44)
+    )
+    rows = [
+        ("Patient name", fields["patient_name"].replace(" [demo]", "")),
+        ("Patient number", case["patient_ref"]),
+        ("Date of admission / visit", fields["admission_date"]),
+        ("Date of discharge", fields["discharge_date"]),
+        ("Diagnosis", fields["diagnosis"]),
+    ]
+    y = 340
+    for label, value in rows:
+        draw.text((80, y), f"{label}:", fill=INK, font=font(30))
+        draw.text((520, y), value, fill=INK, font=font(34))
+        draw.line((520, y + 44, WIDTH - 80, y + 44), fill=(180, 175, 165), width=2)
+        y += 95
+    draw.text((80, 1300), "Treating clinician signature:", fill=INK, font=font(30))
+    draw.line((560, 1360, 1040, 1360), fill=INK, width=3)
+    if signed:
+        draw.text((580, 1290), "A. Otieno", fill=(30, 50, 140), font=font(56))
+    return image
+
+
+def save(image: Image.Image, path: Path, force: bool) -> None:
+    """Write a document unless it exists; recorded model responses depend on the pixels."""
+    if force or not path.exists():
+        image.save(path)
+        print("rendered", path.relative_to(DATA_DIR))
+
+
 def main() -> None:
+    force = "--force" in sys.argv
     for path in sorted(DATA_DIR.glob("*/ground_truth.json")):
         case = json.loads(path.read_text())
+        folder = path.parent
         form = claim_form(case, case["form_signed"])
         if case.get("form_blurred"):
             form = form.filter(ImageFilter.GaussianBlur(radius=9))
-        form.save(path.parent / "claim_form.png")
-        invoice(case).save(path.parent / "invoice.png")
+        save(form, folder / "claim_form.png", force)
+        save(invoice(case), folder / "invoice.png", force)
         if not case["form_signed"]:
-            claim_form(case, True).save(path.parent / "claim_form_signed.png")
-    print("Rendered synthetic documents")
+            save(claim_form(case, True), folder / "claim_form_signed.png", force)
+        if case.get("has_summary", True):
+            name = (
+                "case_summary.png"
+                if case["documents_service_type"] == "outpatient"
+                else ("discharge_summary.png")
+            )
+            save(summary(case, case.get("summary_signed", True)), folder / name, force)
 
 
 if __name__ == "__main__":

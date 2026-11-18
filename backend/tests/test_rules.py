@@ -136,3 +136,29 @@ def test_an_unclear_voice_note_asks_for_a_new_recording_not_a_photo() -> None:
     assert [f.code for f in flags] == ["voice_note_unclear"]
     assert flags[0].citations[0] == note
     assert rules_cited(flags[0]) == {"LIPWAD-EVIDENCE-QUALITY"}
+
+
+def test_a_missing_discharge_summary_is_named_and_cites_part_a() -> None:
+    evidence = Evidence({}, [], True, documents_present={"CLAIM_FORM", "INVOICE"})
+    flags = check(Claim(id="X"), evidence, NOW)
+
+    assert [f.code for f in flags] == ["discharge_summary_missing"]
+    assert rules_cited(flags[0]) == {"SHA-A-13.3.1-SUPPORTING-DOCS", "SHA-NEWS-3-DOCS"}
+
+
+def test_documents_are_not_judged_when_none_were_listed() -> None:
+    assert flags_for() == []
+
+
+def test_an_unsigned_inpatient_discharge_summary_cites_part_b2() -> None:
+    flags = flags_for(visit_type="Inpatient", discharge_summary_signature="absent")
+    flag = next(f for f in flags if f.code == "discharge_summary_unsigned")
+
+    assert rules_cited(flag) == {"SHA-B2-SHIF-DOCS"}
+    assert any(c.kind == "image" for c in flag.citations)
+
+
+def test_an_outpatient_discharge_summary_signature_is_not_required() -> None:
+    assert "discharge_summary_unsigned" not in codes(
+        visit_type="Outpatient", discharge_summary_signature="absent"
+    )

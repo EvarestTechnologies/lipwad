@@ -26,6 +26,10 @@ ACTIONS = {
     "claim_rejected": "Request a review with new evidence within 7 working days",
     "admission_date_mismatch": "Confirm the admission date with the ward and correct it",
     "voice_note_unclear": "Record the voice note again somewhere quiet",
+    "discharge_summary_missing": "Snap the discharge or case summary",
+    "claim_form_missing": "Snap the claim form",
+    "invoice_missing": "Snap the itemised invoice or final bill",
+    "discharge_summary_unsigned": "Ask the treating clinician to sign the discharge summary",
 }
 
 TODAY_FEED = 8

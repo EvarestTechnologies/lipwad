@@ -12,6 +12,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.agent.documents import BASELINE, present_types
 from app.agent.rules import Evidence, check, rule
 from app.db.repository import add_activity, list_uploads, load_claim, save_claim, save_upload
 from app.db.schemas import ActivityStep, Citation, Field, Lifecycle, Readiness, Upload
@@ -27,7 +28,7 @@ from app.models.transcribe import Transcriber, audio_seconds
 from app.tools.intake import DocumentInput, extract_document
 from app.tools.listen import NoteInput, transcribe_note
 
-DOCUMENTS = ("claim_form", "invoice")
+DOCUMENTS = ("claim_form", "invoice", "discharge_summary", "case_summary")
 VOICE_NOTE = "voice_note.wav"
 NOT_CODED = "not coded"  # no code is assigned until SHA's coding standard is confirmed
 
@@ -100,7 +101,7 @@ class ClaimAgent:
             if upload.kind == "audio":
                 voice_retake = self._listen(session, case_id, upload, fields)
                 continue
-            kind = "invoice" if upload.filename == "invoice.png" else "claim_form"
+            kind = DOCUMENT_KINDS.get(upload.filename, "claim_form")
             result = extract_document(
                 DocumentInput(upload=upload, case_id=case_id, kind=kind), self._vision
             )
@@ -134,7 +135,9 @@ class ClaimAgent:
                 practitioner.citations,
             )
 
-        flags = check(claim, Evidence(fields, retake, found, voice_retake), self._clock())
+        on_file = present_types(_original_name(upload.filename) for upload in uploads)
+        evidence = Evidence(fields, retake, found, voice_retake, documents_present=on_file)
+        flags = check(claim, evidence, self._clock())
         coded = []
         if "diagnosis" in fields:
             coded.append(
@@ -344,8 +347,23 @@ class ClaimAgent:
         )
 
 
+DOCUMENT_KINDS = {
+    "invoice.png": "invoice",
+    "discharge_summary.png": "discharge_summary",
+    "case_summary.png": "discharge_summary",
+}
+
+
+def _original_name(filename: str) -> str:
+    """A corrected page stands in for the document it corrects."""
+    return filename.replace("_signed.png", ".png")
+
+
 SETTLEMENT_FLAGS = {"resubmission_deadline_near", "claim_rejected"}
-OTHER_EVIDENCE_FLAGS = {"retake_required", "voice_note_unclear"}
+# Flags raised by evidence a corrected claim form does not speak for.
+OTHER_EVIDENCE_FLAGS = {"retake_required", "voice_note_unclear"} | {
+    requirement.code for requirement in BASELINE
+}
 
 
 class RescueError(Exception):

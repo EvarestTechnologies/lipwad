@@ -53,7 +53,11 @@ def test_running_the_agent_returns_the_reviewed_claim(client: TestClient) -> Non
     assert body["claim"]["readiness"] == "amber"
     assert [flag["code"] for flag in body["claim"]["flags"]] == ["signature_missing"]
     assert body["activity"]
-    assert {upload["id"] for upload in body["uploads"]} == {"F01-claim_form", "F01-invoice"}
+    assert {upload["id"] for upload in body["uploads"]} == {
+        "F01-claim_form",
+        "F01-invoice",
+        "F01-discharge_summary",
+    }
 
 
 def test_upload_images_are_served(client: TestClient) -> None:
