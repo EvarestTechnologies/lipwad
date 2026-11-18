@@ -18,6 +18,10 @@ SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "same-origin",
 }
+ASSET_CACHE = "public, max-age=31536000, immutable"
+# The HTML shell, the service worker files and the manifest must be checked on every
+# visit, so a new deploy reaches returning visitors at once.
+REVALIDATE = {"Cache-Control": "no-cache"}
 
 
 def create_app(static_dir: Path | None = None, services: Services | None = None) -> FastAPI:
@@ -28,6 +32,9 @@ def create_app(static_dir: Path | None = None, services: Services | None = None)
     async def security_headers(request: Request, call_next):
         response = await call_next(request)
         response.headers.update(SECURITY_HEADERS)
+        if request.url.path.startswith("/assets/"):
+            # Vite names every asset by its content hash, so a new build gets new URLs.
+            response.headers["Cache-Control"] = ASSET_CACHE
         return response
 
     app.include_router(health.router, prefix="/api")
@@ -48,8 +55,8 @@ def _serve_frontend(app: FastAPI, static_dir: Path) -> None:
             raise HTTPException(status_code=404)
         candidate = (static_dir / path).resolve()
         if path and candidate.is_file() and candidate.is_relative_to(static_dir.resolve()):
-            return FileResponse(candidate)
-        return FileResponse(index)
+            return FileResponse(candidate, headers=REVALIDATE)
+        return FileResponse(index, headers=REVALIDATE)
 
 
 _static = os.environ.get("STATIC_DIR")

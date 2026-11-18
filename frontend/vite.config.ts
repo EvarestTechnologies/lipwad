@@ -6,7 +6,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      // Lipwad needs no offline mode (DECISIONS: offline capture is out of scope), so the
+      // service worker unregisters itself and clears its caches. Visitors with an older
+      // caching worker are cleaned up and reloaded once on their next visit.
+      selfDestroying: true,
+      injectRegister: false,
       manifest: {
         name: "Lipwad",
         short_name: "Lipwad",
