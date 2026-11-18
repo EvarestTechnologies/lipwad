@@ -49,7 +49,15 @@ export function Review({ claimId }: { claimId: string }) {
   const canFix = !withSha && !corrected && detail.has_corrected_page && (rescue || claim.readiness !== null);
   const canSubmit = claim.readiness === "green" && claim.lifecycle === "draft";
   const patient = patientName(claim.fields.find((f) => f.name === "patient_name")?.value ?? null, claim.readiness !== null);
-  const fields = [...claim.fields, ...claim.coded_lines].filter((f) => !f.name.startsWith("invoice_line"));
+  // Invoice lines show as evidence chips; the service code row is covered by "Tariff codes on invoice".
+  const fields = [...claim.fields, ...claim.coded_lines].filter((f) => !f.name.startsWith("invoice_line") && f.name !== "service_code");
+  /** Names a photo citation after the field it came from, such as "Invoice line 1". */
+  const chipLabel = (c: Citation) => {
+    const same = (x: Citation) => x.source_id === c.source_id && x.quote === c.quote && JSON.stringify(x.region) === JSON.stringify(c.region);
+    const owner = claim.fields.find((f) => f.name.startsWith("invoice_line") && f.citations.some(same))
+      ?? claim.fields.find((f) => f.citations.some(same));
+    return owner ? label(owner.name) : "Photo region";
+  };
 
   function select(field: Field) {
     const citation = field.citations.find((c) => c.kind === "image") ?? field.citations[0];
@@ -80,10 +88,10 @@ export function Review({ claimId }: { claimId: string }) {
               <strong>{REASON_TEXT[flag.code] ?? flag.code}</strong>
               <span className="cites">
                 {flag.citations.map((c, i) => (
-                  <button key={i} className="chip" onClick={() => setSelected({ label: c.kind === "rule" ? c.source_id : c.kind === "audio" ? "Voice note" : "Photo region", value: c.quote ?? "", citation: c })}>
+                  <button key={i} className="chip" onClick={() => setSelected({ label: c.kind === "rule" ? c.source_id : c.kind === "audio" ? "Voice note" : chipLabel(c), value: c.quote ?? "", citation: c })}>
                     {c.kind === "rule" ? `${c.source_id} · ${c.rule_version}`
                       : c.kind === "audio" ? `Voice ${clock(c.t_start ?? 0)}–${clock(c.t_end ?? 0)}`
-                      : "Photo region"}
+                      : chipLabel(c)}
                   </button>
                 ))}
               </span>

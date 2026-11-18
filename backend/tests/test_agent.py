@@ -255,3 +255,17 @@ def test_the_clean_inpatient_claim_reads_a_signed_discharge_summary() -> None:
     assert claim.readiness == Readiness.GREEN
     assert signature.value == "present"
     assert signature.citations[0].source_id == "C04-discharge_summary"
+
+
+def test_the_clean_claim_has_tariff_codes_and_no_note() -> None:
+    claim, _, _ = run("C04")
+    codes = next(f for f in claim.fields if f.name == "invoice_tariff_codes")
+
+    assert codes.value == "all"
+    assert claim.flags == []
+
+
+def test_f10_still_notes_its_missing_tariff_codes() -> None:
+    claim, _, _ = run("F10")
+
+    assert "tariff_code_missing" in {f.code for f in claim.flags}

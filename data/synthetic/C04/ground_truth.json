@@ -40,5 +40,11 @@
   ],
   "invoice_itemised": true,
   "form_signed": true,
-  "note": "Clean inpatient claim with every required document, including a signed discharge summary."
+  "note": "Clean inpatient claim: every required document, a signed discharge summary, and a tariff code printed on every invoice line. The codes are invented (DEMO-T-...) and are not real SHA tariff codes.",
+  "invoice_codes": [
+    "DEMO-T-0101",
+    "DEMO-T-0102",
+    "DEMO-T-0103",
+    "DEMO-T-0104"
+  ]
 }

@@ -33,3 +33,4 @@ Choices that resolve gaps or conflicts in the spec. Change one here before chang
 - **Tariff codes are a note.** Part A 13.3.1 asks for "the itemised invoice coded to the Tariff". Lipwad reads only whether each invoice line has a code printed, never what it is, and shows a non-blocking note citing 13.3.1 when codes are missing. Notes do not stop a claim going green or put it on Today. Lipwad never suggests or fills a code.
 - **No technical errors on screen.** When no reasoning response exists, the feed shows "Explanation not available in this demo run."; the error goes to the server log.
 
+- **C04 carries invented tariff codes.** Its synthetic invoice prints DEMO-T-0101 to DEMO-T-0104 so the clean claim has a code on every line. They are not real SHA tariff codes, and Lipwad only reads that a code is printed, never which one. F10 stays the case with no codes. Claim review hides the "Service code: not coded" row, since "Tariff codes on invoice" covers it.

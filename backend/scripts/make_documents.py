@@ -81,9 +81,15 @@ def invoice(case: dict) -> Image.Image:
     draw.text((80, 310), f"Patient: {patient}  ({case['patient_ref']})", fill=INK, font=font(30))
     total = sum(amount for _, amount in case["invoice_items"])
     lines = case["invoice_items"] if case["invoice_itemised"] else [["Medical services", total]]
+    codes = case.get("invoice_codes") if case["invoice_itemised"] else None
+    if codes:
+        draw.text((80, 400), "Tariff code", fill=INK, font=font(24))
+        draw.text((380, 400), "Service", fill=INK, font=font(24))
     y = 450
-    for description, amount in lines:
-        draw.text((80, y), description, fill=INK, font=font(34))
+    for number, (description, amount) in enumerate(lines):
+        if codes:  # synthetic codes, never real SHA tariff codes
+            draw.text((80, y), codes[number], fill=INK, font=font(30))
+        draw.text((380 if codes else 80, y), description, fill=INK, font=font(34))
         draw.text((900, y), f"KSh {amount:,}", fill=INK, font=font(34))
         y += 80
     draw.line((80, y + 10, WIDTH - 80, y + 10), fill=INK, width=3)
