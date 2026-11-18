@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { api, clock, display, explanation, patientName, timeLeft, type Citation, type ClaimDetail, type Draft, type Field } from "./api";
+import { api, clock, display, explanation, patientName, timeLeft, type AuditEvent, type Citation, type ClaimDetail, type Draft, type Field } from "./api";
 import { LABELS, Link, NO_ADVICE, plain, REASON_TEXT, StatusPill } from "./ui";
 
 
@@ -192,8 +192,54 @@ export function Review({ claimId }: { claimId: string }) {
           ))}
         </ol>
       </section>
+
+      <History claimId={claim.id} version={detail.activity.length} />
     </div>
   );
+}
+
+/** The claim's append-only audit trail, from the first photo read to the person who confirmed. */
+function History({ claimId, version }: { claimId: string; version: number }) {
+  const [events, setEvents] = useState<AuditEvent[] | null>(null);
+  useEffect(() => { api.audit(claimId).then((a) => setEvents(a.events), () => setEvents(null)); }, [claimId, version]);
+  if (!events?.length) return null;
+  return (
+    <section aria-label="History">
+      <details className="history">
+        <summary>
+          <h2>Full history · {events.length} entries</h2>
+        </summary>
+        <p className="muted">
+          Every file read, every value found with its source, every flag with its rule, and who confirmed.
+          Entries are never changed or deleted. <a href={`/api/claims/${claimId}/audit`} download>Download as a file</a>
+        </p>
+        <ol className="feed">
+          {events.map((event, i) => (
+            <li key={i}>
+              <time className="mono">{new Date(event.at).toLocaleString("en-KE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time>
+              <span>{describe(event)}</span>
+              <span className="chip">{event.actor}</span>
+            </li>
+          ))}
+        </ol>
+      </details>
+    </section>
+  );
+}
+
+function describe(event: AuditEvent): string {
+  const d = event.detail as Record<string, string | string[] | null>;
+  const rules = Array.isArray(d.rules) ? d.rules.join(", ") : "";
+  switch (event.action) {
+    case "file_read": return `Read ${String(d.file)}${d.model ? ` with ${d.model}` : ""}`;
+    case "value_extracted": return `Found ${LABELS[String(d.field)] ?? d.field}: ${display(String(d.field), String(d.value))}`;
+    case "flag_raised": return `Flagged: ${plain(String(d.code))} (${rules})`;
+    case "flag_cleared": return `Cleared: ${plain(String(d.code))}`;
+    case "claim_confirmed": return `Confirmed: “${d.statement}”`;
+    case "submitted": return `Sent to SHA, outcome: ${d.outcome}`;
+    case "resubmitted": return `Resubmitted to SHA, outcome: ${d.outcome}`;
+    default: return event.action;
+  }
 }
 
 function VoiceClip({ citation }: { citation: Citation }) {

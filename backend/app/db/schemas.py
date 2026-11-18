@@ -155,3 +155,21 @@ class ActivityStep(BaseModel):
     text: str
     model: str | None = None
     citations: list[Citation] = PydanticField(default_factory=list)
+
+
+class AuditEvent(BaseModel):
+    """One entry in a claim's append-only history: what was read, found, flagged or confirmed."""
+
+    claim_id: str
+    at: AwareDatetime
+    actor: str  # "lipwad", or the name of the person who confirmed
+    action: Literal[
+        "file_read",
+        "value_extracted",
+        "flag_raised",
+        "flag_cleared",
+        "claim_confirmed",
+        "submitted",
+        "resubmitted",
+    ]
+    detail: dict = PydanticField(default_factory=dict)

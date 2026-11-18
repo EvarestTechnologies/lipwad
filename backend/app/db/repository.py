@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.db.schemas import (
     ActivityStep,
+    AuditEvent,
     Citation,
     Claim,
     Field,
@@ -15,7 +16,7 @@ from app.db.schemas import (
     Readiness,
     Upload,
 )
-from app.db.tables import ActivityRow, CitationRow, ClaimRow, FieldRow, FlagRow, UploadRow
+from app.db.tables import ActivityRow, AuditRow, CitationRow, ClaimRow, FieldRow, FlagRow, UploadRow
 
 
 class StaleClaimError(Exception):
@@ -117,6 +118,29 @@ def list_activity(
             ]
         )
     )
+
+
+def add_audit(session: Session, entry: AuditEvent) -> None:
+    data = entry.model_dump(mode="json")
+    session.add(AuditRow(**{**data, "at": entry.at.astimezone(UTC)}))
+    session.flush()
+
+
+def list_audit(session: Session, claim_id: str) -> list[AuditEvent]:
+    """A claim's history, oldest first."""
+    rows = session.scalars(
+        select(AuditRow).where(AuditRow.claim_id == claim_id).order_by(AuditRow.id)
+    )
+    return [
+        AuditEvent(
+            claim_id=row.claim_id,
+            at=row.at.replace(tzinfo=UTC),
+            actor=row.actor,
+            action=row.action,
+            detail=row.detail,
+        )
+        for row in rows
+    ]
 
 
 def list_uploads(session: Session, claim_id: str) -> list[Upload]:

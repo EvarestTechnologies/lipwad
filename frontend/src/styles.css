@@ -102,3 +102,5 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: none; box-
 blockquote { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--signal); background: var(--chip-neutral-bg); color: var(--ink-body); font-size: 14px; line-height: 1.5; }
 .rule blockquote { background: transparent; color: var(--navy-text-soft); }
 .rule a { color: var(--signal); }
+.history summary { cursor: pointer; list-style: revert; }
+.history summary h2 { display: inline; }

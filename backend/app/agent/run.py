@@ -14,8 +14,24 @@ from sqlalchemy.orm import Session
 
 from app.agent.documents import BASELINE, present_types
 from app.agent.rules import Evidence, check, rule
-from app.db.repository import add_activity, list_uploads, load_claim, save_claim, save_upload
-from app.db.schemas import ActivityStep, Citation, Field, Lifecycle, Readiness, Upload
+from app.db.repository import (
+    add_activity,
+    add_audit,
+    list_uploads,
+    load_claim,
+    save_claim,
+    save_upload,
+)
+from app.db.schemas import (
+    ActivityStep,
+    AuditEvent,
+    Citation,
+    Field,
+    Flag,
+    Lifecycle,
+    Readiness,
+    Upload,
+)
 from app.hie.base import ClaimPatch, Confirmation, HieAdapter
 from app.models import (
     ChatMessage,
@@ -107,6 +123,7 @@ class ClaimAgent:
             )
             fields.update({field.name: field for field in result.fields})
             retake += result.retake_reasons
+            self._audit_read(session, case_id, upload, result.fields, result.model)
             self._log(
                 session,
                 case_id,
@@ -138,6 +155,7 @@ class ClaimAgent:
         on_file = present_types(_original_name(upload.filename) for upload in uploads)
         evidence = Evidence(fields, retake, found, voice_retake, documents_present=on_file)
         flags = check(claim, evidence, self._clock())
+        self._audit_flags(session, case_id, claim.flags, flags)
         coded = []
         if "diagnosis" in fields:
             coded.append(
@@ -182,6 +200,7 @@ class ClaimAgent:
             self._log(session, case_id, "read", f"Voice note could not be heard: {error}", None, [])
             return whole_note
         fields.update({field.name: field for field in result.fields})
+        self._audit_read(session, case_id, upload, result.fields, result.model)
         heard = "; ".join(f'"{c.quote}"' for f in result.fields for c in f.citations)
         self._log(
             session,
@@ -249,12 +268,17 @@ class ClaimAgent:
                     {"field": field.name, "before": before.get(field.name), "after": field.value}
                 )
                 fields[field.name] = field
+        changed = {change["field"] for change in changes}
         practitioner = fields.get("practitioner_id")
         found = self._hie.lookup_practitioner(practitioner.value).found if practitioner else None
         flags = check(claim, Evidence(fields, result.retake_reasons, found), self._clock())
         # The corrected page only speaks for the claim form; keep what other evidence raised.
         kept = [f for f in claim.flags if f.code in OTHER_EVIDENCE_FLAGS]
         flags += [f for f in kept if f.code not in {flag.code for flag in flags}]
+        self._audit_read(
+            session, case_id, upload, [f for f in result.fields if f.name in changed], result.model
+        )
+        self._audit_flags(session, case_id, claim.flags, flags)
         claim = claim.model_copy(update={"fields": list(fields.values()), "flags": flags})
         claim = claim.model_copy(update={"readiness": _readiness(claim)})
         save_claim(session, claim)
@@ -290,7 +314,14 @@ class ClaimAgent:
         blocking = [flag.code for flag in claim.flags if flag.code not in SETTLEMENT_FLAGS]
         if not corrections or blocking:
             raise RescueError(f"{case_id} has no drafted fix or is still blocked: {blocking}")
+        self._audit_confirmed(session, claim, confirmation)
         response = self._hie.edit_claim(claim.hie_id, ClaimPatch(corrections=corrections))
+        self._audit(
+            session,
+            case_id,
+            "resubmitted",
+            {"hie_id": claim.hie_id, "outcome": response.outcome.value},
+        )
         claim = claim.model_copy(
             update={
                 "lifecycle": response.lifecycle,
@@ -318,7 +349,14 @@ class ClaimAgent:
         claim = load_claim(session, case_id)
         if claim.readiness is not Readiness.GREEN or claim.lifecycle is not Lifecycle.DRAFT:
             raise RescueError(f"{case_id} is not a green draft")
+        self._audit_confirmed(session, claim, confirmation)
         response = self._hie.submit_claim(claim, confirmation)
+        self._audit(
+            session,
+            case_id,
+            "submitted",
+            {"hie_id": response.id, "outcome": response.outcome.value},
+        )
         claim = claim.model_copy(update={"lifecycle": response.lifecycle, "hie_id": response.id})
         if response.lifecycle in (Lifecycle.RETURNED, Lifecycle.REJECTED):
             claim = claim.model_copy(update={"returned_at": response.outcome_at})
@@ -331,6 +369,59 @@ class ClaimAgent:
             f"{response.outcome.value}",
             None,
             [],
+        )
+
+    def _audit(self, session, claim_id: str, action: str, detail: dict, actor="lipwad") -> None:
+        add_audit(
+            session,
+            AuditEvent(
+                claim_id=claim_id, at=self._clock(), actor=actor, action=action, detail=detail
+            ),
+        )
+
+    def _audit_read(self, session, claim_id, upload: Upload, fields: list[Field], model) -> None:
+        """Record the file that was read and every value taken from it, with its evidence."""
+        self._audit(
+            session,
+            claim_id,
+            "file_read",
+            {"file": upload.filename, "upload_id": upload.id, "model": model or None},
+        )
+        for field in fields:
+            self._audit(
+                session,
+                claim_id,
+                "value_extracted",
+                {
+                    "field": field.name,
+                    "value": field.value,
+                    "confidence": field.confidence,
+                    "model": model or None,
+                    "citations": [c.model_dump(mode="json") for c in field.citations],
+                },
+            )
+
+    def _audit_flags(self, session, claim_id, before: list[Flag], after: list[Flag]) -> None:
+        """Record each flag that appeared or went away, with the rules it cites."""
+        old, new = {f.code: f for f in before}, {f.code: f for f in after}
+        for code, flag in new.items():
+            if code not in old:
+                self._audit(session, claim_id, "flag_raised", _flag_detail(flag))
+        for code, flag in old.items():
+            if code not in new:
+                self._audit(session, claim_id, "flag_cleared", _flag_detail(flag))
+
+    def _audit_confirmed(self, session, claim, confirmation: Confirmation) -> None:
+        self._audit(
+            session,
+            claim.id,
+            "claim_confirmed",
+            {
+                "confirmed_at": confirmation.confirmed_at.isoformat(),
+                "statement": "I have checked every field against its source.",
+                "open_flags": [flag.code for flag in claim.flags],
+            },
+            actor=confirmation.confirmed_by,
         )
 
     def _log(self, session, claim_id, kind, text, model, citations) -> None:
@@ -399,6 +490,15 @@ def _with_corrected_page(uploads: list[Upload], case_id: str) -> list[Upload]:
         else:
             swapped.append(upload)
     return swapped
+
+
+def _flag_detail(flag: Flag) -> dict:
+    return {
+        "code": flag.code,
+        "severity": flag.severity,
+        "rules": [c.source_id for c in flag.citations if c.kind == "rule"],
+        "citations": [c.model_dump(mode="json") for c in flag.citations],
+    }
 
 
 def _count(number: int, noun: str) -> str:

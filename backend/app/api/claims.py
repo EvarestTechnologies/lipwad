@@ -4,13 +4,19 @@ from dataclasses import asdict
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import AwareDatetime, BaseModel, StringConstraints
 from sqlalchemy.exc import IntegrityError
 
 from app.agent.rules import RULES
 from app.agent.run import RescueError, case_uploads, signed_upload
-from app.db.repository import StaleClaimError, list_activity, list_uploads, load_claim
+from app.db.repository import (
+    StaleClaimError,
+    list_activity,
+    list_audit,
+    list_uploads,
+    load_claim,
+)
 from app.db.schemas import Lifecycle, Readiness
 from app.db.tables import ClaimRow, UploadRow
 from app.hie.base import Confirmation, HieDuplicateClaimError, HieEditRefusedError
@@ -155,6 +161,19 @@ def router(services: Services) -> APIRouter:
             session.commit()
             return detail(session, claim_id)
 
+    @api.get("/claims/{claim_id}/audit")
+    def audit(claim_id: str) -> JSONResponse:
+        """The claim's full history as one file: every read, value, flag and confirmation."""
+        with services.sessions() as session:
+            if load_claim(session, claim_id) is None:
+                raise HTTPException(status_code=404, detail=f"unknown claim {claim_id}")
+            events = [e.model_dump(mode="json") for e in list_audit(session, claim_id)]
+        body = {"claim_id": claim_id, "exported_at": _now().isoformat(), "events": events}
+        return JSONResponse(
+            body,
+            headers={"Content-Disposition": f'attachment; filename="lipwad-audit-{claim_id}.json"'},
+        )
+
     @api.get("/uploads/{upload_id}/image")
     @api.get("/uploads/{upload_id}/file")
     def upload_file(upload_id: str) -> FileResponse:
@@ -210,6 +229,12 @@ def _corrected(claim: dict) -> bool:
         for field in claim["fields"]
         for citation in field["citations"]
     )
+
+
+def _now():
+    from datetime import UTC, datetime
+
+    return datetime.now(UTC)
 
 
 def _confirmation(body: ConfirmBody) -> Confirmation:

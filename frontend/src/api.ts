@@ -48,6 +48,8 @@ export type Rule = {
   quote: string;
   checks: string;
 };
+export type AuditEvent = { at: string; actor: string; action: string; detail: Record<string, unknown> };
+export type Audit = { claim_id: string; exported_at: string; events: AuditEvent[] };
 export type Draft = { reason: string[]; changes: { field: string; before: string | null; after: string }[] };
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -69,6 +71,7 @@ export const api = {
   today: () => call<Today>("/today"),
   claims: () => call<Summary[]>("/claims"),
   rules: () => call<Rule[]>("/rules"),
+  audit: (id: string) => call<Audit>(`/claims/${id}/audit`),
   claim: (id: string) => call<ClaimDetail>(`/claims/${id}`),
   run: (id: string) => post<ClaimDetail>(`/claims/${id}/run`),
   submit: (id: string, confirmedBy: string) =>

@@ -139,6 +139,7 @@ class DemoState:
                 source.backup(connection.connection.driver_connection)
         finally:
             source.close()
+        Base.metadata.create_all(self.engine)  # a snapshot from an older release may lack tables
         if (self._baseline / "hie_state.json").exists():
             shutil.copyfile(self._baseline / "hie_state.json", self._state)
         taken = datetime.fromisoformat((self._baseline / "taken_at").read_text().strip())
