@@ -15,7 +15,7 @@ Kenyan hospitals deliver care under the Social Health Authority (SHA) and then l
 1. **Reads the claim file.** Muse Spark vision transcribes each photographed document into fields. Every field carries a citation: the document and the region of the photo it came from. A blurred page produces a retake request, never a guess.
 2. **Hears the voice note.** Muse Voice Transcribe transcribes a staff voice note into timed segments. A date that was said becomes a field cited to the seconds it was spoken, and Claim review plays exactly that moment.
 3. **Verifies it.** The agent checks the practitioner and facility against the registry, cross-checks what was said against what was written, then runs rule checks. Each finding cites the evidence and the rule it relies on.
-4. **Decides and explains.** Claims come out green (ready), amber (one named fix) or red (blocked). Muse Spark Open explains the outcome in English and Kiswahili. The model explains; it never sets the status, so it cannot turn a blocked claim green.
+4. **Decides and explains.** Claims come out green (ready), amber (one named fix) or red (blocked). Muse Spark explains the outcome in English and Kiswahili. The model explains; it never sets the status, so it cannot turn a blocked claim green.
 5. **Submits only with a person's OK.** A green claim goes to the HIE after a named clerk confirms they checked every field.
 6. **Rescues returned claims.** For a returned claim, Lipwad reads the corrected page, shows exactly which field changed, and resubmits only that correction after confirmation, with the deadline countdown in view.
 
@@ -26,10 +26,12 @@ Clicking any field in Claim review highlights the region of the photo it came fr
 |---|---|---|
 | Reading documents, with value regions for click-to-source | Muse Spark 1.3 (vision) | Meta Model API |
 | Transcribing voice notes, with timestamps for audio citations | Muse Voice Transcribe 1.0 (realtime) | Meta Model API |
-| Reasoning and bilingual explanation in the agent loop | Muse Spark Open (`meta-models/muse-spark-open-1026`) | Baseten |
+| Reasoning and bilingual explanation in the agent loop | Muse Spark 1.3 | Meta Model API (see note) |
 | Development: model client layer (#7) | Muse Code | Local terminal |
 
 All model calls go through one client layer (`backend/app/models/`) that resolves each role to a provider, so any role can fall back to the Meta Model API.
+
+**Note on reasoning:** reasoning currently runs on the Meta Model API. The Baseten path for Meta's open-weights Muse Spark model (`meta-models/muse-spark-open-1026`) is kept in the code, so reasoning can be hosted in-country during the pilot; setting `BASETEN_API_KEY` switches it back on. `make deploy` checks `/api/health/reasoning` and fails if the reasoning model does not answer.
 
 ## Results on the synthetic case set
 Running the agent live on real models, every demo case reaches its expected status and reason:
@@ -55,7 +57,7 @@ A claim takes 22–37 seconds from photos to a cited status. The same cases run 
 photos ─▶ Muse Spark vision ─────┐
 voice  ─▶ Muse Voice Transcribe ─┴─▶ cited fields ─▶ registry + cross-source + rule checks ─▶ status
                                                                                    │
-                                                 Muse Spark Open ◀─────────────────┘ explanation (EN/SW)
+                                                 Muse Spark ◀──────────────────────┘ explanation (EN/SW)
                                                          │
                                  named confirmation ─▶ HIE adapter (mock) ─▶ rescue loop
 ```
@@ -68,7 +70,7 @@ Details are in `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` and `docs/DEPLOY.md`.
 
 ## Run it
 ```bash
-cp .env.example .env        # add META_MODEL_API_KEY and BASETEN_API_KEY
+cp .env.example .env        # add META_MODEL_API_KEY (BASETEN_API_KEY is optional)
 make seed                   # load the synthetic cases
 make dev                    # backend on :8000, frontend on :5173
 make test                   # 224 backend tests, no network

@@ -37,6 +37,9 @@ Notes on these sources:
 
 Capture superseded versions when a rule changes, with effective-from and effective-to dates, so claims are judged by the rule in force on the date of service.
 
+## Model providers
+Reasoning currently runs on the Meta Model API (Muse Spark 1.3). The Baseten path for Meta's open-weights Muse Spark model (`meta-models/muse-spark-open-1026`) is kept in the code for in-country hosting during the pilot; it is used only when `BASETEN_API_KEY` is set. The Baseten deployment was deactivated after the hackathon, so it is off until reactivated.
+
 ## Integration documentation
 | Doc ID | Title | Issuer | URL | Date accessed |
 |---|---|---|---|---|
