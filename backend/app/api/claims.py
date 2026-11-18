@@ -9,7 +9,7 @@ from pydantic import AwareDatetime, BaseModel, StringConstraints
 from sqlalchemy.exc import IntegrityError
 
 from app.agent.rules import RULES
-from app.agent.run import RescueError, case_uploads, signed_upload
+from app.agent.run import EXPLANATION_MISSING, RescueError, case_uploads, signed_upload
 from app.agent.steps import FIX_STEPS
 from app.db.repository import (
     StaleClaimError,
@@ -17,6 +17,7 @@ from app.db.repository import (
     list_audit,
     list_uploads,
     load_claim,
+    supersede_explanations,
 )
 from app.db.schemas import Lifecycle, Readiness
 from app.db.tables import ClaimRow, UploadRow
@@ -33,6 +34,16 @@ BUDGET_SPENT = (
     "Lipwad has used today's demo allowance of model runs. Everything already reviewed "
     "can still be opened; new reviews resume tomorrow."
 )
+
+
+SUPERSEDE_REASON = (
+    "Written before the explanation safety fix: the model could improvise advice from "
+    "field values. Hidden from the claim feed; kept here for the record."
+)
+
+
+class SupersedeBody(BaseModel):
+    before: AwareDatetime
 
 
 class ConfirmBody(BaseModel):
@@ -178,6 +189,20 @@ def router(services: Services) -> APIRouter:
             raise HTTPException(status_code=404)
         result = services.reasoning_probe.check()
         return JSONResponse(result, status_code=200 if result["status"] == "ok" else 503)
+
+    @admin.post("/demo/supersede-explanations", include_in_schema=False)
+    def supersede(body: SupersedeBody, x_admin_key: Annotated[str | None, Header()] = None) -> dict:
+        """Hide explanations written before a time, keeping them in the audit trail."""
+        if not services.admin_key or services.demo is None:
+            raise HTTPException(status_code=404)
+        if not x_admin_key or not hmac.compare_digest(x_admin_key, services.admin_key):
+            raise HTTPException(status_code=403)
+        with services.sessions() as session:
+            count = supersede_explanations(
+                session, body.before, _now(), SUPERSEDE_REASON, EXPLANATION_MISSING
+            )
+            session.commit()
+        return {"superseded": count}
 
     @admin.post("/demo/snapshot", include_in_schema=False)
     def snapshot(x_admin_key: Annotated[str | None, Header()] = None) -> dict:

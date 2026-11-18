@@ -1,6 +1,6 @@
 """Converts claims between domain schemas and database rows."""
 
-from datetime import UTC
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -141,6 +141,43 @@ def list_audit(session: Session, claim_id: str) -> list[AuditEvent]:
         )
         for row in rows
     ]
+
+
+def supersede_explanations(
+    session: Session, before: datetime, now: datetime, reason: str, replacement: str
+) -> int:
+    """Hide explanations written before `before`, keeping each one in the audit trail.
+
+    The text goes into an `explanation_superseded` audit entry with its time and model,
+    then the feed shows `replacement` instead. Returns how many were superseded.
+    """
+    rows = session.scalars(
+        select(ActivityRow).where(
+            ActivityRow.kind == "decide",
+            ActivityRow.at < before.astimezone(UTC),
+            ActivityRow.text.contains(" | SW: "),
+        )
+    ).all()
+    for row in rows:
+        add_audit(
+            session,
+            AuditEvent(
+                claim_id=row.claim_id,
+                at=now,
+                actor="lipwad",
+                action="explanation_superseded",
+                detail={
+                    "text": row.text,
+                    "written_at": row.at.replace(tzinfo=UTC).isoformat(),
+                    "model": row.model,
+                    "reason": reason,
+                },
+            ),
+        )
+        row.text = replacement
+        row.model = None
+    session.flush()
+    return len(rows)
 
 
 def list_uploads(session: Session, claim_id: str) -> list[Upload]:

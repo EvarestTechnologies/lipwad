@@ -173,5 +173,6 @@ class AuditEvent(BaseModel):
         "claim_confirmed",
         "submitted",
         "resubmitted",
+        "explanation_superseded",
     ]
     detail: dict = PydanticField(default_factory=dict)

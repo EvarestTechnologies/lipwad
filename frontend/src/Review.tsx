@@ -325,6 +325,7 @@ function describe(event: AuditEvent): string {
     case "claim_confirmed": return `Confirmed: “${d.statement}”`;
     case "submitted": return `Sent to SHA, outcome: ${d.outcome}`;
     case "resubmitted": return `Resubmitted to SHA, outcome: ${d.outcome}`;
+    case "explanation_superseded": return "An earlier explanation was hidden because it was written before the explanation safety fix. Its text is kept in the downloadable record.";
     default: return event.action;
   }
 }

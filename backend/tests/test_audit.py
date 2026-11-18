@@ -89,3 +89,39 @@ def test_the_export_is_one_downloadable_file_per_claim() -> None:
     )
     assert response.json()["claim_id"] == "F10"
     assert client.get("/api/claims/NOPE/audit").status_code == 404
+
+
+def test_old_explanations_are_hidden_and_kept_in_the_audit_as_superseded() -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from app.agent.run import EXPLANATION_MISSING
+
+    client, services = make_client(admin_key="k" * 32, demo=object())
+    client.post("/api/claims/F03/run")
+    shown = lambda: [a["text"] for a in client.get("/api/claims/F03").json()["activity"]]  # noqa: E731
+    assert any(" | SW: " in text for text in shown())
+
+    cutoff = (datetime.now(UTC) + timedelta(minutes=1)).isoformat()
+    response = client.post(
+        "/api/demo/supersede-explanations",
+        json={"before": cutoff},
+        headers={"x-admin-key": "k" * 32},
+    )
+
+    assert response.json()["superseded"] >= 1
+    assert not any(" | SW: " in text for text in shown())
+    assert EXPLANATION_MISSING in shown()
+    superseded = [e for e in history(client, "F03") if e["action"] == "explanation_superseded"]
+    assert superseded and " | SW: " in superseded[0]["detail"]["text"]
+    assert superseded[0]["detail"]["reason"]
+
+
+def test_superseding_needs_the_admin_key() -> None:
+    client, _ = make_client(admin_key="k" * 32, demo=object())
+
+    assert (
+        client.post(
+            "/api/demo/supersede-explanations", json={"before": "2026-11-18T00:00:00+00:00"}
+        ).status_code
+        == 403
+    )

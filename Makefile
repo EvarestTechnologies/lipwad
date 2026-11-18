@@ -1,4 +1,4 @@
-.PHONY: dev test seed lint deploy smoke review-all snapshot
+.PHONY: dev test seed lint deploy smoke review-all snapshot supersede
 
 dev:
 	(cd backend && set -a && { [ -f ../.env ] && . ../.env; true; } && set +a && LIPWAD_SERVE_API=1 uv run uvicorn app.main:app --reload --port 8000) & \
@@ -40,3 +40,10 @@ review-all:
 snapshot:
 	@test -n "$(URL)" || (echo "usage: make snapshot URL=https://..." && exit 1)
 	@set -a && . ./.env && set +a && curl -fsS -X POST -H "x-admin-key: $$LIPWAD_ADMIN_KEY" "$(URL)/api/demo/snapshot" && echo " snapshot saved"
+
+# Hide explanations written before BEFORE (an ISO time), keeping them in the audit trail.
+supersede:
+	@test -n "$(URL)" -a -n "$(BEFORE)" || (echo "usage: make supersede URL=https://... BEFORE=2026-11-18T12:41:00Z" && exit 1)
+	@set -a && . ./.env && set +a && curl -fsS -X POST "$(URL)/api/demo/supersede-explanations" \
+		-H "x-admin-key: $$LIPWAD_ADMIN_KEY" -H "content-type: application/json" -d '{"before":"$(BEFORE)"}' && echo
+
