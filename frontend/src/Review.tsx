@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, clock, display, explanation, patientName, timeLeft, type AuditEvent, type Citation, type ClaimDetail, type Draft, type Field } from "./api";
-import { LABELS, Link, NO_ADVICE, plain, REASON_TEXT, StatusPill } from "./ui";
+import { LABELS, Link, NO_ADVICE, Page, plain, REASON_TEXT, StatusPill } from "./ui";
 
 
 type Selected = { label: string; value: string; citation: Citation };
@@ -14,6 +14,8 @@ export function Review({ claimId }: { claimId: string }) {
   const [confirmed, setConfirmed] = useState(false);
   const [name, setName] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("found");
+  const evidenceRef = useFitToPhoto(selected?.citation.kind === "image");
 
   const load = useCallback(async () => {
     try {
@@ -41,7 +43,7 @@ export function Review({ claimId }: { claimId: string }) {
     }
   }
 
-  if (!detail) return <p className="muted">{error ?? "Loading…"}</p>;
+  if (!detail) return <Page title="Claim"><p className="muted">{error ?? "Loading…"}</p></Page>;
   const { claim } = detail;
   const rescue = claim.lifecycle === "returned" || claim.lifecycle === "rejected";
   const withSha = claim.lifecycle === "submitted" || claim.lifecycle === "paid";
@@ -64,45 +66,61 @@ export function Review({ claimId }: { claimId: string }) {
     setSelected(evidenceFor(field, citation));
   }
 
-  return (
-    <div className="review">
-      <p className="crumbs"><Link to="/claims">Claims</Link> / <span className="mono">{claim.id}</span></p>
-      <header className="review-head">
-        <div>
-          <h1>{patient}</h1>
-          <StatusPill readiness={claim.readiness} lifecycle={claim.lifecycle} />
-          {(claim.resubmission_deadline ?? claim.review_deadline) && <span className="deadline"> {timeLeft(claim.resubmission_deadline ?? claim.review_deadline, claim.lifecycle)}</span>}
-        </div>
-        {!withSha && !(rescue && corrected) && (
-          <button className="secondary" disabled={busy !== null} onClick={() => act("run", () => api.run(claim.id))}>
-            {busy === "run" ? "Lipwad is reading…" : claim.readiness ? "Review again" : "Review with Lipwad"}
+  const deadline = claim.resubmission_deadline ?? claim.review_deadline;
+  const showFix = canFix || (draft && !withSha) || (rescue && !corrected);
+  const showConfirm = canSubmit || (rescue && corrected);
+  const flagItems = claim.flags.map((flag) => (
+    <li key={flag.code} className={flag.severity === "red" ? "flag blocked" : flag.severity === "note" ? "flag note" : "flag fix"}>
+      <strong>{REASON_TEXT[flag.code] ?? flag.code}</strong>
+      <span className="cites">
+        {flag.citations.map((c, i) => (
+          <button key={i} className="chip" onClick={() => setSelected({ label: c.kind === "rule" ? c.source_id : c.kind === "audio" ? "Voice note" : chipLabel(c), value: c.quote ?? "", citation: c })}>
+            {c.kind === "rule" ? `${c.source_id} · ${c.rule_version}`
+              : c.kind === "audio" ? `Voice ${clock(c.t_start ?? 0)}–${clock(c.t_end ?? 0)}`
+              : chipLabel(c)}
           </button>
-        )}
-      </header>
-      {error && <p className="error" role="alert">{error}</p>}
+        ))}
+      </span>
+    </li>
+  ));
 
-      {claim.flags.length > 0 && (
-        <ul className="flags">
-          {claim.flags.map((flag) => (
-            <li key={flag.code} className={flag.severity === "red" ? "flag blocked" : flag.severity === "note" ? "flag note" : "flag fix"}>
-              <strong>{REASON_TEXT[flag.code] ?? flag.code}</strong>
-              <span className="cites">
-                {flag.citations.map((c, i) => (
-                  <button key={i} className="chip" onClick={() => setSelected({ label: c.kind === "rule" ? c.source_id : c.kind === "audio" ? "Voice note" : chipLabel(c), value: c.quote ?? "", citation: c })}>
-                    {c.kind === "rule" ? `${c.source_id} · ${c.rule_version}`
-                      : c.kind === "audio" ? `Voice ${clock(c.t_start ?? 0)}–${clock(c.t_end ?? 0)}`
-                      : chipLabel(c)}
-                  </button>
-                ))}
-              </span>
-            </li>
-          ))}
-        </ul>
+  return (
+    <Page
+      crumbs={<><Link to="/claims">Claims</Link> / <span className="mono">{claim.id}</span></>}
+      title={patient}
+      meta={
+        <span className="title-meta">
+          <StatusPill readiness={claim.readiness} lifecycle={claim.lifecycle} />
+          {deadline && <span className="deadline">{timeLeft(deadline, claim.lifecycle)}</span>}
+        </span>
+      }
+      actions={!withSha && !(rescue && corrected) && (
+        <button className="secondary" disabled={busy !== null} onClick={() => act("run", () => api.run(claim.id))}>
+          {busy === "run" ? "Lipwad is reading…" : claim.readiness ? "Review again" : "Review with Lipwad"}
+        </button>
       )}
-
-      <div className="columns">
-        <section className="evidence" aria-label="Evidence">
-          <h2>Evidence {selected ? `· ${selected.label}` : ""}</h2>
+      top={(error || claim.flags.length > 0) && (
+        <>
+          {error && <p className="error" role="alert">{error}</p>}
+          {claim.flags.length > 2 ? (
+            <details className="flag-summary">
+              <summary>
+                <strong>{claim.flags.length} findings:</strong>{" "}
+                {claim.flags.map((f) => plain(f.code)).join(", ")}
+                <span className="show-all">Show all</span>
+              </summary>
+              <ul className="flags">{flagItems}</ul>
+            </details>
+          ) : (
+            claim.flags.length > 0 && <ul className="flags">{flagItems}</ul>
+          )}
+        </>
+      )}
+      bodyClass="claim-body"
+    >
+      <section className="evidence" aria-label="Evidence" ref={evidenceRef}>
+        <h2>Evidence {selected ? `· ${selected.label}` : ""}</h2>
+        <div className="evidence-view">
           {selected?.citation.kind === "rule" ? (
             <div className="rule">
               <p className="mono">{selected.citation.source_id} · {selected.citation.rule_version}</p>
@@ -113,125 +131,170 @@ export function Review({ claimId }: { claimId: string }) {
             <VoiceClip citation={selected.citation} />
           ) : selected ? (
             <figure className="photo">
-              <img src={`/api/uploads/${selected.citation.source_id}/image`} alt={`Document for ${selected.label}`} />
-              {selected.citation.region && <Highlight region={selected.citation.region} />}
+              <div className="photo-frame">
+                <img src={`/api/uploads/${selected.citation.source_id}/image`} alt={`Document for ${selected.label}`} />
+                {selected.citation.region && <Highlight region={selected.citation.region} />}
+              </div>
               <figcaption className="mono">Source: {selected.citation.source_id}</figcaption>
             </figure>
           ) : (
             <p className="muted">Tap a field to see exactly where it came from.</p>
           )}
-        </section>
-
-        <section className="found" aria-label="What Lipwad found">
-          <h2>What Lipwad found</h2>
-          {fields.length === 0 && <p className="muted">Not reviewed yet.</p>}
-          <ul>
-            {fields.map((field) => (
-              <li key={field.name}>
-                <button className="field" aria-pressed={selected?.label === (LABELS[field.name] ?? field.name)} onClick={() => select(field)}>
-                  <span className="label">{LABELS[field.name] ?? field.name}</span>
-                  <span className="value">{display(field.name, field.value)}</span>
-                  <span className="chip">{field.citations.length} source{field.citations.length === 1 ? "" : "s"}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
-
-      {(canFix || (draft && !withSha) || (rescue && !corrected)) && (
-        <section className="rescue" aria-label={rescue ? "Rescue" : "Fix"}>
-          <h2>{rescue ? "Rescue" : "Fix"}</h2>
-          {!draft && canFix ? (
-            <button disabled={busy !== null} onClick={() => act("rescue", async () => setDraft(await api.rescue(claim.id)))}>
-              {busy === "rescue" ? "Reading the signed page…" : "Read the signed page"}
-            </button>
-          ) : !draft ? (
-            <p className="muted">No corrected page has been added for this claim yet.</p>
-          ) : (
-            <>
-              <p>{rescue ? "SHA's reason" : "What needed fixing"}: {draft.reason.map((r) => REASON_TEXT[r] ?? r).join(" ")}</p>
-              <table>
-                <thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
-                <tbody>
-                  {draft.changes.map((c) => (
-                    <tr key={c.field}><td>{LABELS[c.field] ?? c.field}</td><td>{c.before ? display(c.field, c.before) : "—"}</td><td>
-                        <button className="chip" onClick={() => { const f = claim.fields.find((x) => x.name === c.field); if (f) select(f); }}>
-                          {display(c.field, c.after)} · see source
-                        </button>
-                      </td></tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          )}
-        </section>
-      )}
-
-      {(canSubmit || (rescue && corrected)) && (
-        <section className="confirm" aria-label="Confirm">
-          <label>Your name <input value={name} onChange={(e) => setName(e.target.value)} /></label>
-          <label className="check">
-            <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
-            I have checked every field against its source.
-          </label>
-          <button
-            disabled={!confirmed || !name.trim() || busy !== null}
-            onClick={() => act("submit", async () => {
-              await (rescue ? api.resubmit(claim.id, name) : api.submit(claim.id, name));
-              setDraft(null);
-            })}
-          >
-            {rescue ? "Approve fix & resubmit" : "OK & submit to SHA"}
-          </button>
-          <p className="guardrail">{NO_ADVICE}</p>
-        </section>
-      )}
-
-      <section aria-label="Activity">
-        <h2>Lipwad's steps</h2>
-        <ol className="feed">
-          {detail.activity.map((step, i) => (
-            <li key={i}>
-              <time className="mono">{new Date(step.at).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}</time>
-              <Explained text={step.text} />
-              {step.model && <span className="chip model">{step.model}</span>}
-            </li>
-          ))}
-        </ol>
+        </div>
       </section>
 
-      <History claimId={claim.id} version={detail.activity.length} />
-    </div>
+      <section className="side" aria-label="Claim details">
+        <div className="tabs" role="tablist" aria-label="Claim details">
+          {TABS.map((t) => (
+            <button key={t.id} role="tab" id={`tab-${t.id}`} aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} className="tab" onClick={() => setTab(t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <div className="tab-panel" role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} tabIndex={0}>
+          {tab === "found" && (
+            <div className="found">
+              {fields.length === 0 && <p className="muted">Not reviewed yet.</p>}
+              <ul>
+                {fields.map((field) => (
+                  <li key={field.name}>
+                    <button className="field" aria-pressed={selected?.label === (LABELS[field.name] ?? field.name)} onClick={() => select(field)}>
+                      <span className="label">{LABELS[field.name] ?? field.name}</span>
+                      <span className="value">{display(field.name, field.value)}</span>
+                      <span className="chip">{field.citations.length} source{field.citations.length === 1 ? "" : "s"}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {tab === "steps" && (
+            <ol className="feed">
+              {detail.activity.map((step, i) => (
+                <li key={i}>
+                  <time className="mono">{new Date(step.at).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}</time>
+                  <Explained text={step.text} />
+                  {step.model && <span className="chip model">{step.model}</span>}
+                </li>
+              ))}
+            </ol>
+          )}
+          {tab === "history" && <History claimId={claim.id} version={detail.activity.length} />}
+        </div>
+
+        {(showFix || showConfirm) && (
+          <div className="dock">
+            {showFix && (
+              <section className="rescue" aria-label={rescue ? "Rescue" : "Fix"}>
+                <h2>{rescue ? "Rescue" : "Fix"}</h2>
+                {!draft && canFix ? (
+                  <button disabled={busy !== null} onClick={() => act("rescue", async () => setDraft(await api.rescue(claim.id)))}>
+                    {busy === "rescue" ? "Reading the signed page…" : "Read the signed page"}
+                  </button>
+                ) : !draft ? (
+                  <p className="muted">No corrected page has been added for this claim yet.</p>
+                ) : (
+                  <>
+                    <p>{rescue ? "SHA's reason" : "What needed fixing"}: {draft.reason.map((r) => REASON_TEXT[r] ?? r).join(" ")}</p>
+                    <table>
+                      <thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
+                      <tbody>
+                        {draft.changes.map((c) => (
+                          <tr key={c.field}><td>{LABELS[c.field] ?? c.field}</td><td>{c.before ? display(c.field, c.before) : "—"}</td><td>
+                              <button className="chip" onClick={() => { const f = claim.fields.find((x) => x.name === c.field); if (f) select(f); }}>
+                                {display(c.field, c.after)} · see source
+                              </button>
+                            </td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                )}
+              </section>
+            )}
+            {showConfirm && (
+              <section className="confirm" aria-label="Confirm">
+                <div className="confirm-row">
+                  <label>Your name <input value={name} onChange={(e) => setName(e.target.value)} /></label>
+                  <label className="check">
+                    <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+                    I have checked every field against its source.
+                  </label>
+                </div>
+                <button
+                  disabled={!confirmed || !name.trim() || busy !== null}
+                  onClick={() => act("submit", async () => {
+                    await (rescue ? api.resubmit(claim.id, name) : api.submit(claim.id, name));
+                    setDraft(null);
+                  })}
+                >
+                  {rescue ? "Approve fix & resubmit" : "OK & submit to SHA"}
+                </button>
+                <p className="guardrail">{NO_ADVICE}</p>
+              </section>
+            )}
+          </div>
+        )}
+      </section>
+    </Page>
   );
 }
+
+const PAGE_RATIO = 1240 / 1754; // width / height of the synthetic document photos
+
+/**
+ * Shrinks the evidence panel to the photo when the column is too narrow for the photo to
+ * fill its height, so no empty dark space is left under it.
+ */
+function useFitToPhoto(active: boolean) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const panel = ref.current;
+    const area = panel?.parentElement;
+    if (!panel || !area) return;
+    const fit = () => {
+      panel.style.maxHeight = "";
+      const view = panel.querySelector<HTMLElement>(".evidence-view");
+      if (!active || !view) return;
+      const chrome = panel.offsetHeight - view.clientHeight;
+      const photo = view.clientWidth / PAGE_RATIO + 34; // the 34px holds the source caption
+      if (photo < view.clientHeight) panel.style.maxHeight = `${Math.ceil(chrome + photo)}px`;
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(area);
+    return () => observer.disconnect();
+  }, [active]);
+  return ref;
+}
+
+const TABS = [
+  { id: "found", label: "What Lipwad found" },
+  { id: "steps", label: "Lipwad's steps" },
+  { id: "history", label: "Full history" },
+] as const;
 
 /** The claim's append-only audit trail, from the first photo read to the person who confirmed. */
 function History({ claimId, version }: { claimId: string; version: number }) {
   const [events, setEvents] = useState<AuditEvent[] | null>(null);
   useEffect(() => { api.audit(claimId).then((a) => setEvents(a.events), () => setEvents(null)); }, [claimId, version]);
-  if (!events?.length) return null;
+  if (!events?.length) return <p className="muted">No history yet.</p>;
   return (
-    <section aria-label="History">
-      <details className="history">
-        <summary>
-          <h2>Full history · {events.length} entries</h2>
-        </summary>
-        <p className="muted">
-          Every file read, every value found with its source, every flag with its rule, and who confirmed.
-          Entries are never changed or deleted. <a href={`/api/claims/${claimId}/audit`} download>Download as a file</a>
-        </p>
-        <ol className="feed">
-          {events.map((event, i) => (
-            <li key={i}>
-              <time className="mono">{new Date(event.at).toLocaleString("en-KE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time>
-              <span>{describe(event)}</span>
-              <span className="chip">{event.actor}</span>
-            </li>
-          ))}
-        </ol>
-      </details>
-    </section>
+    <div className="history">
+      <p className="muted">
+        {events.length} entries: every file read, every value found with its source, every flag with its rule, and who
+        confirmed. Entries are never changed or deleted. <a href={`/api/claims/${claimId}/audit`} download>Download as a file</a>
+      </p>
+      <ol className="feed">
+        {events.map((event, i) => (
+          <li key={i}>
+            <time className="mono">{new Date(event.at).toLocaleString("en-KE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time>
+            <span>{describe(event)}</span>
+            <span className="chip">{event.actor}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 

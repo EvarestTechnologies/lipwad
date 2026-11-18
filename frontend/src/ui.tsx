@@ -114,3 +114,49 @@ export function plain(text: string): string {
     .replace(/\b([a-z]+(?:_[a-z]+)+)\b/g, (m) => (LABELS[m] ?? SHORT_REASON[m] ?? DOCUMENTS[m] ?? m.replace(/_/g, " ")).toLowerCase())
     .replace(/ -> /g, " → ");
 }
+
+/** Every screen's frame: a fixed header, an optional fixed strip, and a body that scrolls on its own. */
+export function Page({ crumbs, title, meta, actions, top, bodyClass, children }: {
+  crumbs?: ReactNode;
+  title: ReactNode;
+  meta?: ReactNode;
+  actions?: ReactNode;
+  top?: ReactNode;
+  bodyClass?: string;
+  children: ReactNode;
+}) {
+  return (
+    <>
+      <header className="page-header">
+        <div className="page-titles">
+          {crumbs && <p className="crumbs">{crumbs}</p>}
+          <div className="page-title-row">
+            <h1>{title}</h1>
+            {meta}
+          </div>
+        </div>
+        <div className="page-actions">
+          {actions}
+          <span className="demo-badge">Synthetic data · demo</span>
+        </div>
+      </header>
+      {top && <div className="page-top">{top}</div>}
+      <div className={`page-body ${bodyClass ?? "scroll"}`}>{children}</div>
+    </>
+  );
+}
+
+const ICON_PATHS: Record<string, string> = {
+  "/": "M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10",
+  "/claims": "M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6",
+  "/money": "M3 7h18v10H3zM12 9.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5M6 10v4M18 10v4",
+  "/rules": "M6 3h12v18l-6-4-6 4z",
+};
+
+export function NavIcon({ to }: { to: string }) {
+  return (
+    <svg className="nav-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d={ICON_PATHS[to]} />
+    </svg>
+  );
+}

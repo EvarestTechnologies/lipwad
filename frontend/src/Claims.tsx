@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { api, ksh, patientName, timeLeft, type Summary } from "./api";
 import { navigate } from "./router";
-import { REASON_TEXT, StatusPill } from "./ui";
+import { Page, REASON_TEXT, StatusPill } from "./ui";
 
 export function ClaimsScreen() {
   const [claims, setClaims] = useState<Summary[] | null>(null);
@@ -10,10 +10,17 @@ export function ClaimsScreen() {
   useEffect(() => { api.claims().then(setClaims, (e: Error) => setError(e.message)); }, []);
 
   return (
-    <div>
-      <h1>Claims</h1>
-      {error && <p className="error" role="alert">{error}</p>}
-      {!claims && !error && <p className="muted">Loading…</p>}
+    <Page
+      title="Claims"
+      top={
+        <>
+          <p className="muted summary-line">
+            {claims ? `${claims.length} claims · ${claims.filter((c) => c.reasons.length).length} need a person` : "Loading…"}
+          </p>
+          {error && <p className="error" role="alert">{error}</p>}
+        </>
+      }
+    >
       <ul className="rows claims">
         {claims?.map((c) => (
           <li key={c.id}>
@@ -32,6 +39,6 @@ export function ClaimsScreen() {
           </li>
         ))}
       </ul>
-    </div>
+    </Page>
   );
 }

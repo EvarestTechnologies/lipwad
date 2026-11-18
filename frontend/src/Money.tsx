@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { api, ksh, type Summary } from "./api";
+import { Page } from "./ui";
 
 const STAGES: { label: string; note: string; match: (c: Summary) => boolean }[] = [
   { label: "Not reviewed", note: "Claim files Lipwad has not read yet", match: (c) => !c.readiness && c.lifecycle === "draft" },
@@ -17,10 +18,15 @@ export function MoneyScreen() {
   useEffect(() => { api.claims().then(setClaims, (e: Error) => setError(e.message)); }, []);
 
   return (
-    <div>
-      <h1>Money</h1>
-      <p className="muted">Where each claim's shillings stand. Amounts are invoice totals read from the documents.</p>
-      {error && <p className="error" role="alert">{error}</p>}
+    <Page
+      title="Money"
+      top={
+        <>
+          <p className="muted summary-line">Where each claim's shillings stand. Amounts are invoice totals read from the documents.</p>
+          {error && <p className="error" role="alert">{error}</p>}
+        </>
+      }
+    >
       <ul className="rows">
         {STAGES.map((stage) => {
           const items = claims?.filter(stage.match) ?? [];
@@ -34,6 +40,6 @@ export function MoneyScreen() {
           );
         })}
       </ul>
-    </div>
+    </Page>
   );
 }

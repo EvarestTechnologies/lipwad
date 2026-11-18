@@ -5,7 +5,7 @@ import { MoneyScreen } from "./Money";
 import { Review } from "./Review";
 import { RulesScreen } from "./Rules";
 import { TodayScreen } from "./Today";
-import { Link } from "./ui";
+import { Link, NavIcon } from "./ui";
 
 function currentPath() {
   return window.location.pathname.replace(/(.)\/+$/, "$1");
@@ -32,20 +32,27 @@ export function App() {
     : section === "/money" ? <MoneyScreen />
     : section === "/rules" ? <RulesScreen />
     : <TodayScreen />;
-  const links = SECTIONS.map((s) => <Link key={s.to} to={s.to} current={s.to === section}>{s.label}</Link>);
+  const links = SECTIONS.map((s) => (
+    <Link key={s.to} to={s.to} current={s.to === section} className="nav-link">
+      <NavIcon to={s.to} />
+      <span className="nav-label">{s.label}</span>
+    </Link>
+  ));
 
   return (
     <div className="shell">
       <nav className="sidebar" aria-label="Main">
-        <Link to="/" className="logo">lipwad</Link>
+        <Link to="/" className="logo"><span className="logo-full">lipwad</span><span className="logo-short" aria-hidden="true">L</span></Link>
         {links}
         <div className="facility">
-          <strong>Upendo County Hospital</strong>
-          <span>Level 4 · demo data</span>
+          <strong className="nav-label">Upendo County Hospital</strong>
+          <span className="sidebar-badge" title="Synthetic data, demo only">
+            <span aria-hidden="true">◆</span>
+            <span className="nav-label">Synthetic data, demo only</span>
+          </span>
         </div>
       </nav>
       <main className="content">{screen}</main>
-      <nav className="tabbar" aria-label="Main">{links}</nav>
     </div>
   );
 }
