@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.agent.rules import RULES
 from app.agent.run import RescueError, case_uploads, signed_upload
+from app.agent.steps import FIX_STEPS
 from app.db.repository import (
     StaleClaimError,
     list_activity,
@@ -22,24 +23,7 @@ from app.db.tables import ClaimRow, UploadRow
 from app.hie.base import Confirmation, HieDuplicateClaimError, HieEditRefusedError
 from app.services import ClaimBusyError, Services
 
-ACTIONS = {
-    "declaration_unsigned": "Get the hospital declaration signed, then snap the signed page",
-    "facility_stamp_missing": "Stamp the claim form, then snap it again",
-    "physician_details_missing": "Add the rendering physician's name and registration number",
-    "itemised_invoice_missing": "Snap the itemised invoice",
-    "service_type_inconsistent": "Correct the service type to match the documents",
-    "practitioner_not_found": "Confirm the practitioner's registration number",
-    "retake_required": "Retake the photo in better light",
-    "resubmission_deadline_near": "Fix and resubmit the sent back claim before day 14",
-    "claim_rejected": "Request a review with new evidence within 7 working days",
-    "admission_date_mismatch": "Confirm the admission date with the ward and correct it",
-    "voice_note_unclear": "Record the voice note again somewhere quiet",
-    "discharge_summary_missing": "Snap the discharge or case summary",
-    "claim_form_missing": "Snap the claim form",
-    "invoice_missing": "Snap the itemised invoice or final bill",
-    "discharge_summary_unsigned": "Ask the treating clinician to sign the discharge summary",
-    "voice_needs_review": "Listen to the part of the voice note that is not in English",
-}
+ACTIONS = FIX_STEPS
 
 TODAY_FEED = 8
 

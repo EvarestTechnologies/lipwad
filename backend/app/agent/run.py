@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.agent.documents import BASELINE, present_types
 from app.agent.rules import Evidence, check, rule
+from app.agent.steps import FIX_STEPS
 from app.db.repository import (
     add_activity,
     add_audit,
@@ -52,11 +53,14 @@ log = logging.getLogger(__name__)
 NOT_CODED = "not coded"  # no code is assigned until SHA's coding standard is confirmed
 
 EXPLAIN_PROMPT = (
-    "You write for a hospital claims clerk in Kenya who prepares claims for SHA. Given "
-    "the extracted fields, the status and the findings, tell the clerk what to do next "
-    "to get this claim paid. At most two short sentences, plain words, no field names "
-    "in snake_case. You never give clinical advice, never suggest adding or upgrading "
-    "services, and never tell the clerk to approve or pay a claim: SHA does that. "
+    "You help a hospital claims clerk in Kenya who prepares claims for SHA. You are given "
+    "the claim's status and the steps Lipwad has already chosen. Restate those steps for "
+    "the clerk in at most two short sentences of plain English, then give the same in "
+    "Kiswahili. Use only the steps given. Never add a step, value, date, amount, code, "
+    "service or reason; never say which document or value is right; never tell the clerk "
+    "to add, remove or change a charge, a service or a code; never give clinical advice; "
+    "and never say a claim will be approved or paid. If there are no steps, say the claim "
+    "is ready for a person to check against its sources and submit. "
     'Return JSON only: {"explanation_en": English text, "explanation_sw": the same in '
     "Kiswahili}."
 )
@@ -235,10 +239,15 @@ class ClaimAgent:
         return whole_note if result.retake_reasons else None
 
     def _explain(self, session: Session, claim) -> None:
+        # Only the status and Lipwad's own wording: no field values to improvise from, and
+        # no notes, which are not steps.
         payload = {
-            "fields": {field.name: field.value for field in claim.fields},
             "status": claim.readiness.value,
-            "findings": [flag.code for flag in claim.flags],
+            "steps": [
+                FIX_STEPS.get(flag.code, flag.code)
+                for flag in claim.flags
+                if flag.severity != "note"
+            ],
         }
         request = ChatRequest(
             case_id=claim.id,

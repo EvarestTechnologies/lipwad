@@ -269,3 +269,30 @@ def test_f10_still_notes_its_missing_tariff_codes() -> None:
     claim, _, _ = run("F10")
 
     assert "tariff_code_missing" in {f.code for f in claim.flags}
+
+
+def explain_payload(case_id: str) -> dict:
+    _, _, reasoning = run(case_id)
+    return json.loads(reasoning.requests[-1].messages[-1].content)
+
+
+def test_the_explanation_model_sees_only_the_status_and_lipwads_own_steps() -> None:
+    from app.agent.steps import FIX_STEPS
+
+    payload = explain_payload("F10")
+
+    assert set(payload) == {"status", "steps"}
+    assert payload["steps"] == [FIX_STEPS["discharge_summary_missing"]]
+
+
+def test_notes_never_become_steps_and_a_clean_claim_has_none() -> None:
+    assert explain_payload("C01") == {"status": "green", "steps": []}
+
+
+def test_no_step_names_a_value_or_asks_to_change_a_charge_or_code() -> None:
+    import re
+
+    from app.agent.steps import FIX_STEPS
+
+    for step in FIX_STEPS.values():
+        assert not re.search(r"\d{4}-\d{2}|KSh|\bremove\b|\btariff code", step, re.I), step
